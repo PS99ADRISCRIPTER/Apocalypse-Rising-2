@@ -2,10 +2,11 @@ local base = "https://raw.githubusercontent.com/DEINNAME/Apocalypse-Rising-2/mai
 
 local Aim = loadstring(game:HttpGet(base.."modules/aim.lua"))()
 local ESP = loadstring(game:HttpGet(base.."modules/esp.lua"))()
+local Movement = loadstring(game:HttpGet(base.."modules/movement.lua"))()
+local XRay = loadstring(game:HttpGet(base.."modules/xray.lua"))()
 
 local UI = loadstring(game:HttpGet(base.."ui/window.lua"))()
 
--- Tabs erstellen
-UI:Create(Aim, ESP)
+UI:Create(Aim, ESP, Movement, XRay)
 
-print("Script loaded clean")
+print("FULL SCRIPT LOADED")
