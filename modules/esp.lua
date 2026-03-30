@@ -11,8 +11,10 @@ function ESP:Toggle(v)
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character then
             if v then
-                local h = Instance.new("Highlight")
-                h.Parent = p.Character
+                if not p.Character:FindFirstChild("Highlight") then
+                    local h = Instance.new("Highlight")
+                    h.Parent = p.Character
+                end
             else
                 for _, obj in pairs(p.Character:GetChildren()) do
                     if obj:IsA("Highlight") then
