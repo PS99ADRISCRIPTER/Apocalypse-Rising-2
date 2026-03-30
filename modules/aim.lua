@@ -6,11 +6,11 @@ local RunService = game:GetService("RunService")
 local mouse = LocalPlayer:GetMouse()
 
 local enabled = false
-local connection
+local conn
 
 local function getClosest()
     local closest, dist = nil, 150
-    
+
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
             local pos, vis = workspace.CurrentCamera:WorldToScreenPoint(p.Character.Head.Position)
@@ -23,15 +23,15 @@ local function getClosest()
             end
         end
     end
-    
+
     return closest
 end
 
 function Aim:Toggle(v)
     enabled = v
-    
+
     if v then
-        connection = RunService.RenderStepped:Connect(function()
+        conn = RunService.RenderStepped:Connect(function()
             local t = getClosest()
             if t then
                 local pos = workspace.CurrentCamera:WorldToScreenPoint(t.Position)
@@ -39,7 +39,7 @@ function Aim:Toggle(v)
             end
         end)
     else
-        if connection then connection:Disconnect() end
+        if conn then conn:Disconnect() end
     end
 end
 
