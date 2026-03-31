@@ -5,13 +5,6 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local mouse = LocalPlayer:GetMouse()
 
--- Module laden
-local AimAssist = require(script.modules.aimassist)
-local ESP = require(script.modules.esp)
-local HeadExpander = require(script.modules.headexpander)
-local XRay = require(script.modules.xray)
-local UI = require(script.modules.ui)
-
 -- Rayfield UI Load
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -49,7 +42,7 @@ local VisualsTab = Window:CreateTab("Visuals", "eye")
 local PlayerTab = Window:CreateTab("Player", "user")
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
--- Globale Variablen (werden von Modulen verwendet)
+-- Globale Tabelle für Module
 _G.UltimateCheat = {
     Window = Window,
     AimTab = AimTab,
@@ -66,77 +59,74 @@ _G.UltimateCheat = {
     PAUSED = false
 }
 
--- Module initialisieren
-AimAssist.init()
-ESP.init()
-HeadExpander.init()
-XRay.init()
-UI.init()
+-- Module laden (wenn sie existieren)
+local AimAssist = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/aimassist.lua"))()
+local ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/esp.lua"))()
+local HeadExpander = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/headexpander.lua"))()
+local XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/ui.lua"))()
 
--- Input Handler (globale Tastenkombinationen)
+-- Module initialisieren
+if AimAssist and AimAssist.init then AimAssist.init() end
+if ESP and ESP.init then ESP.init() end
+if HeadExpander and HeadExpander.init then HeadExpander.init() end
+if XRay and XRay.init then XRay.init() end
+if UI and UI.init then UI.init() end
+
+-- Input Handler
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    -- UI Toggle
     if input.KeyCode == Enum.KeyCode.RightControl then
         Rayfield:SetVisibility(not Rayfield:IsVisible())
     end
     
-    -- Aim Assist Toggle (F5)
-    if input.KeyCode == Enum.KeyCode.F5 then
+    if input.KeyCode == Enum.KeyCode.F5 and AimAssist then
         local newState = not AimAssist.isEnabled()
         AimAssist.toggle(newState)
-        UI.updateAimToggle(newState)
+        if UI and UI.updateAimToggle then UI.updateAimToggle(newState) end
     end
     
-    -- Player ESP Toggle (F4)
-    if input.KeyCode == Enum.KeyCode.F4 then
+    if input.KeyCode == Enum.KeyCode.F4 and ESP then
         local newState = not ESP.isPlayerEspEnabled()
         ESP.togglePlayerESP(newState)
-        UI.updatePlayerESPToggle(newState)
+        if UI and UI.updatePlayerESPToggle then UI.updatePlayerESPToggle(newState) end
     end
     
-    -- Head Expander Toggle (H)
-    if input.KeyCode == Enum.KeyCode.H then
+    if input.KeyCode == Enum.KeyCode.H and HeadExpander then
         local newState = not HeadExpander.isEnabled()
         HeadExpander.toggle(newState)
-        UI.updateHeadToggle(newState)
+        if UI and UI.updateHeadToggle then UI.updateHeadToggle(newState) end
     end
     
-    -- Infinite Jump Toggle (V)
-    if input.KeyCode == Enum.KeyCode.V then
+    if input.KeyCode == Enum.KeyCode.V and HeadExpander then
         local newState = not HeadExpander.isInfiniteJumpEnabled()
         HeadExpander.toggleInfiniteJump(newState)
-        UI.updateInfiniteJumpToggle(newState)
+        if UI and UI.updateInfiniteJumpToggle then UI.updateInfiniteJumpToggle(newState) end
     end
     
-    -- Walk Speed Toggle (B)
-    if input.KeyCode == Enum.KeyCode.B then
+    if input.KeyCode == Enum.KeyCode.B and HeadExpander then
         local newState = not HeadExpander.isWalkSpeedEnabled()
         HeadExpander.toggleWalkSpeed(newState)
-        UI.updateWalkSpeedToggle(newState)
+        if UI and UI.updateWalkSpeedToggle then UI.updateWalkSpeedToggle(newState) end
     end
     
-    -- Pause Visuals (F3)
     if input.KeyCode == Enum.KeyCode.F3 then
         _G.UltimateCheat.PAUSED = not _G.UltimateCheat.PAUSED
         print("Visuals Pause: " .. (_G.UltimateCheat.PAUSED and "ON" or "OFF"))
     end
     
-    -- X-Ray Toggle (F8)
-    if input.KeyCode == Enum.KeyCode.F8 then
+    if input.KeyCode == Enum.KeyCode.F8 and XRay then
         XRay.toggle()
     end
     
-    -- Vehicle ESP Toggle (F9)
-    if input.KeyCode == Enum.KeyCode.F9 then
+    if input.KeyCode == Enum.KeyCode.F9 and ESP then
         local newState = not ESP.isVehicleEspEnabled()
         ESP.toggleVehicleESP(newState)
-        UI.updateVehicleESPToggle(newState)
+        if UI and UI.updateVehicleESPToggle then UI.updateVehicleESPToggle(newState) end
     end
     
-    -- Aim aktivieren (Maus-Taste 2)
-    if AimAssist.isEnabled() and input.UserInputType == Enum.UserInputType.MouseButton2 then
+    if AimAssist and AimAssist.isEnabled() and input.UserInputType == Enum.UserInputType.MouseButton2 then
         AimAssist.startAiming()
     end
 end)
@@ -144,7 +134,7 @@ end)
 UserInputService.InputEnded:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if AimAssist.isEnabled() and input.UserInputType == Enum.UserInputType.MouseButton2 then
+    if AimAssist and AimAssist.isEnabled() and input.UserInputType == Enum.UserInputType.MouseButton2 then
         AimAssist.stopAiming()
     end
 end)
@@ -153,17 +143,31 @@ end)
 RunService.Heartbeat:Connect(function()
     if _G.UltimateCheat.PAUSED then return end
     
-    if ESP.isPlayerEspEnabled() then
+    if ESP and ESP.isPlayerEspEnabled() then
         ESP.updatePlayerVisuals()
     end
     
-    if ESP.isVehicleEspEnabled() then
+    if ESP and ESP.isVehicleEspEnabled() then
         ESP.updateVehicleESP()
     end
     
-    AimAssist.updateFOVCircle()
+    if AimAssist then
+        AimAssist.updateFOVCircle()
+    end
 end)
 
 print("==========================================")
 print("Ultimate Cheat Suite successfully loaded!")
+print("==========================================")
+print("Controls:")
+print("- RightControl: Toggle UI")
+print("- F5: Toggle Aim Assist")
+print("- F4: Toggle Player ESP")
+print("- H: Toggle Head Expander")
+print("- V: Toggle Infinite Jump")
+print("- B: Toggle Walk Speed")
+print("- F3: Pause All Visuals")
+print("- F8: Toggle X-Ray")
+print("- F9: Toggle Vehicle ESP")
+print("- Mouse 2: Aim (when Aim Assist enabled)")
 print("==========================================")
