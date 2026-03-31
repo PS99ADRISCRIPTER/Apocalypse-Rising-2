@@ -1,144 +1,36 @@
 -- modules/headexpander.lua
+-- Head Expander ist DEAKTIVIERT (nur Infinite Jump und Walk Speed funktionieren)
 local HeadExpander = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- Zustand
+-- ========== HEAD EXPANDER (DEAKTIVIERT) ==========
+-- Die Funktionen existieren, machen aber NICHTS
 local enabled = false
-local connection = nil
-local lastUpdate = 0
-local UPDATE_INTERVAL = 0.3 -- Schneller: alle 0.3 Sekunden
 
--- Größentabelle
-local originalSizes = {}
-local originalCollisions = {}
-
--- Head wiederherstellen
-local function restoreHead(char)
-    if not char then return end
-    local head = char:FindFirstChild("Head")
-    if not head then return end
-    
-    local old = originalSizes[char]
-    if old then
-        pcall(function()
-            head.Size = old
-            head.CanCollide = originalCollisions[char] or false
-        end)
-        originalSizes[char] = nil
-        originalCollisions[char] = nil
-    end
-end
-
--- Alle Heads zurücksetzen
-local function restoreAll()
-    for char, _ in pairs(originalSizes) do
-        restoreHead(char)
-    end
-    originalSizes = {}
-    originalCollisions = {}
-end
-
--- Head vergrößern
-local function expandHead(char, size)
-    if not char then return end
-    local head = char:FindFirstChild("Head")
-    if not head then return end
-    
-    -- Speichern wenn noch nicht gespeichert
-    if originalSizes[char] == nil then
-        originalSizes[char] = head.Size
-        originalCollisions[char] = head.CanCollide
-    end
-    
-    pcall(function()
-        head.Size = Vector3.new(size, size, size)
-        head.CanCollide = true
-    end)
-end
-
--- Update-Funktion
-local function update()
-    if not enabled then return end
-    
-    local now = tick()
-    if now - lastUpdate < UPDATE_INTERVAL then return end
-    lastUpdate = now
-    
-    local size = 5
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-        size = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-    end
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            expandHead(player.Character, size)
-        end
-    end
-end
-
--- NEUER SPIELER
-local function onPlayerAdded(player)
-    if player == LocalPlayer then return end
-    
-    local conn
-    conn = player.CharacterAdded:Connect(function(char)
-        task.wait(0.5)
-        if enabled and char then
-            local size = 5
-            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-                size = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-            end
-            expandHead(char, size)
-        end
-        if conn then conn:Disconnect() end
-    end)
-end
-
--- ========== ÖFFENTLICHE FUNKTIONEN ==========
 function HeadExpander.toggle(state)
     enabled = state
-    
     if state then
-        update()
-        if not connection then
-            connection = RunService.Heartbeat:Connect(update)
-        end
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                onPlayerAdded(player)
-            end
-        end
-        Players.PlayerAdded:Connect(onPlayerAdded)
-    else
-        if connection then
-            connection:Disconnect()
-            connection = nil
-        end
-        restoreAll()
+        print("Head Expander ist DEAKTIVIERT in dieser Version")
+        -- Keine Aktion
     end
 end
 
 function HeadExpander.isEnabled()
-    return enabled
+    return false -- Immer false, egal was die UI sagt
 end
 
 function HeadExpander.updateSize()
-    if enabled then
-        update()
-    end
+    -- Macht nichts
 end
 
 function HeadExpander.resetHeadExpander()
-    HeadExpander.toggle(false)
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
-        _G.UltimateCheat.Rayfield.Flags.HeadSize:Set(5)
-    end
+    -- Macht nichts
 end
 
--- ========== INFINITE JUMP ==========
+-- ========== INFINITE JUMP (funktioniert) ==========
 local infiniteEnabled = false
 local infiniteConn = nil
 
@@ -173,7 +65,7 @@ function HeadExpander.resetInfiniteJump()
     HeadExpander.toggleInfiniteJump(false)
 end
 
--- ========== WALK SPEED ==========
+-- ========== WALK SPEED (funktioniert) ==========
 local walkEnabled = false
 local walkConn = nil
 local normalSpeed = 16
@@ -251,7 +143,7 @@ function HeadExpander.resetWalkSpeed()
 end
 
 function HeadExpander.init()
-    -- nichts
+    print("Head Expander ist DEAKTIVIERT - Nur Infinite Jump und Walk Speed funktionieren")
 end
 
 return HeadExpander
