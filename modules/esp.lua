@@ -4,7 +4,6 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Variablen
 local playerEspEnabled = false
 local vehicleEspEnabled = false
 local playerHighlights = {}
@@ -13,7 +12,6 @@ local vehicleHighlights = {}
 local vehicleGuis = {}
 local vehicleEspConnection = nil
 
--- Einstellungen (werden über UI geändert)
 local PLAYER_ESP_COLOR = Color3.fromRGB(255, 255, 255)
 local PLAYER_FILL_TRANSPARENCY = 0.5
 local SHOW_PLAYER_NAMES = true
@@ -23,7 +21,6 @@ local VEHICLE_NAME_COLOR = Color3.fromRGB(0, 120, 255)
 local MAX_VEHICLE_DISTANCE = 500
 local STUD_TO_M = 0.28
 
--- Helper: Spielername holen
 local function getPlayerName(player)
     if player:FindFirstChild("leaderstats") then
         local leaderstats = player.leaderstats
@@ -47,7 +44,6 @@ local function getPlayerName(player)
     return player.Name
 end
 
--- Highlight hinzufügen/entfernen
 local function addPlayerHighlight(char)
     if not char or not char:IsDescendantOf(workspace) then return nil end
     
@@ -93,7 +89,6 @@ local function removeHighlight(object)
     end
 end
 
--- Labels erstellen
 local function createPlayerLabel(char, player)
     if not char or not char:FindFirstChild("Head") then return nil end
     
@@ -241,12 +236,12 @@ local function removeLabel(object)
     end
 end
 
--- Update Funktionen
 local lastPlayerUpdate = 0
 local PLAYER_UPDATE_INTERVAL = 0.2
 
 function ESP.updatePlayerVisuals()
-    if _G.UltimateCheat.PAUSED or not playerEspEnabled then return end
+    if _G.UltimateCheat and _G.UltimateCheat.PAUSED then return end
+    if not playerEspEnabled then return end
     
     local currentTime = tick()
     if currentTime - lastPlayerUpdate < PLAYER_UPDATE_INTERVAL then return end
@@ -317,7 +312,8 @@ local lastVehicleUpdate = 0
 local VEHICLE_UPDATE_INTERVAL = 0.3
 
 function ESP.updateVehicleESP()
-    if _G.UltimateCheat.PAUSED or not vehicleEspEnabled then return end
+    if _G.UltimateCheat and _G.UltimateCheat.PAUSED then return end
+    if not vehicleEspEnabled then return end
     
     local currentTime = tick()
     if currentTime - lastVehicleUpdate < VEHICLE_UPDATE_INTERVAL then return end
@@ -385,7 +381,6 @@ function ESP.updateVehicleESP()
     end
 end
 
--- Cleanup
 local function cleanupPlayerVisuals()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then
@@ -408,7 +403,6 @@ local function cleanupVehicleVisuals()
     vehicleGuis = {}
 end
 
--- Toggle Funktionen
 function ESP.togglePlayerESP(state)
     playerEspEnabled = state
     
@@ -436,7 +430,6 @@ function ESP.toggleVehicleESP(state)
     end
 end
 
--- Getter/Setter für UI
 function ESP.isPlayerEspEnabled() return playerEspEnabled end
 function ESP.isVehicleEspEnabled() return vehicleEspEnabled end
 
