@@ -94,7 +94,7 @@ end)
 
 pcall(function()
     XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
-    print("XRay geladen")
+    print("nigga geladen")
 end)
 
 pcall(function()
