@@ -195,6 +195,20 @@ function AimAssist.getFOVCircle()
     return ESPCircle
 end
 
+function AimAssist.resetAimAssist()
+    AimAssist.toggle(false)
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+        _G.UltimateCheat.Rayfield.Flags.AimToggle:Set(false)
+        _G.UltimateCheat.Rayfield.Flags.AimSpeed:Set(0.3)
+        _G.UltimateCheat.Rayfield.Flags.AimFOV:Set(100)
+        _G.UltimateCheat.Rayfield.Flags.ShowFOV:Set(false)
+        _G.UltimateCheat.Rayfield.Flags.TargetPart:Set({"Head"})
+    end
+    if ESPCircle then
+        ESPCircle.Visible = false
+    end
+end
+
 function AimAssist.init()
     AimAssist.createFOVCircle()
 end
