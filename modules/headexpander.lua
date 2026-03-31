@@ -20,6 +20,7 @@ local sprintWalkSpeed = 35
 local currentWalkSpeed = 16
 local isSprinting = false
 
+-- HEAD EXPANDER
 local function expandHead(character, size)
     if not character then return end
     
@@ -46,6 +47,14 @@ local function restoreHead(character)
         end
         originalHeadSizes[character] = nil
         originalHeadCollisions[character] = nil
+    end
+end
+
+local function restoreAllHeads()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            restoreHead(player.Character)
+        end
     end
 end
 
@@ -88,13 +97,7 @@ function HeadExpander.toggle(state)
             headExpanderConnection:Disconnect()
             headExpanderConnection = nil
         end
-        
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                restoreHead(player.Character)
-            end
-        end
-        
+        restoreAllHeads()
         originalHeadSizes = {}
         originalHeadCollisions = {}
     end
@@ -110,18 +113,28 @@ function HeadExpander.updateSize()
     end
 end
 
+function HeadExpander.resetHeadExpander()
+    HeadExpander.toggle(false)
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+        _G.UltimateCheat.Rayfield.Flags.HeadSize:Set(5)
+    end
+end
+
+-- INFINITE JUMP
 function HeadExpander.toggleInfiniteJump(state)
     infiniteJumpEnabled = state
     
     if state then
-        infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
-            if LocalPlayer.Character then
-                local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    humanoid:ChangeState("Jumping")
+        if not infiniteJumpConnection then
+            infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
+                if LocalPlayer.Character then
+                    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        humanoid:ChangeState("Jumping")
+                    end
                 end
-            end
-        end)
+            end)
+        end
     else
         if infiniteJumpConnection then
             infiniteJumpConnection:Disconnect()
@@ -134,6 +147,11 @@ function HeadExpander.isInfiniteJumpEnabled()
     return infiniteJumpEnabled
 end
 
+function HeadExpander.resetInfiniteJump()
+    HeadExpander.toggleInfiniteJump(false)
+end
+
+-- WALK SPEED
 local function updateWalkSpeed()
     if not walkSpeedEnabled or not LocalPlayer.Character then return end
     
@@ -162,7 +180,9 @@ function HeadExpander.toggleWalkSpeed(state)
             end
         end
         
-        walkSpeedConnection = RunService.Heartbeat:Connect(updateWalkSpeed)
+        if not walkSpeedConnection then
+            walkSpeedConnection = RunService.Heartbeat:Connect(updateWalkSpeed)
+        end
         
         LocalPlayer.CharacterAdded:Connect(function(character)
             task.wait(0.1)
@@ -194,6 +214,10 @@ function HeadExpander.setNormalWalkSpeed(speed)
     normalWalkSpeed = speed
     if not isSprinting and walkSpeedEnabled then
         currentWalkSpeed = speed
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid.WalkSpeed = speed end
+        end
     end
 end
 
@@ -201,7 +225,23 @@ function HeadExpander.setSprintWalkSpeed(speed)
     sprintWalkSpeed = speed
     if isSprinting and walkSpeedEnabled then
         currentWalkSpeed = speed
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then humanoid.WalkSpeed = speed end
+        end
     end
+end
+
+function HeadExpander.resetWalkSpeed()
+    HeadExpander.toggleWalkSpeed(false)
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+        _G.UltimateCheat.Rayfield.Flags.NormalWalkSpeed:Set(16)
+        _G.UltimateCheat.Rayfield.Flags.SprintWalkSpeed:Set(35)
+    end
+    normalWalkSpeed = 16
+    sprintWalkSpeed = 35
+    currentWalkSpeed = 16
+    isSprinting = false
 end
 
 function HeadExpander.init()
