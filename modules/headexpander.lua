@@ -1,140 +1,56 @@
 -- modules/headexpander.lua
 local HeadExpander = {}
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Globale Variablen
+-- Originalen LimbExtender laden (nur einmal)
+local LimbExtender = nil
+local limbInstance = nil
+
+local function getLimbExtender()
+    if not LimbExtender then
+        LimbExtender = loadstring(game:HttpGet('https://raw.githubusercontent.com/AAPVdev/scripts/refs/heads/main/LimbExtender.lua'))()
+    end
+    return LimbExtender
+end
+
 local headExpanderEnabled = false
 local originalHeadSizes = {}
-local originalHeadCollisions = {}
-local updateConnection = nil
-local lastUpdate = 0
-local UPDATE_INTERVAL = 0.3 -- Nur alle 0.3 Sekunden updaten
 
--- HEAD EXPANDER FUNKTION (nur Head, keine anderen Limbs)
-local function expandHead(character, size)
-    if not character then return end
-    
-    local head = character:FindFirstChild("Head")
-    if not head then return end
-    
-    -- Nur wenn sich die Größe ändert
-    if head.Size == Vector3.new(size, size, size) then
-        return
-    end
-    
-    -- Originalwerte speichern
-    if not originalHeadSizes[character] then
-        originalHeadSizes[character] = head.Size
-        originalHeadCollisions[character] = head.CanCollide
-    end
-    
-    -- Größe ändern
-    pcall(function()
-        head.Size = Vector3.new(size, size, size)
-        head.CanCollide = true
-    end)
-end
-
-local function restoreHead(character)
-    if not character then return end
-    
-    if originalHeadSizes[character] then
-        local head = character:FindFirstChild("Head")
-        if head then
-            pcall(function()
-                head.Size = originalHeadSizes[character]
-                head.CanCollide = originalHeadCollisions[character] or false
-            end)
-        end
-        originalHeadSizes[character] = nil
-        originalHeadCollisions[character] = nil
-    end
-end
-
-local function restoreAllHeads()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            restoreHead(player.Character)
-        end
-    end
-end
-
-local function updateAllHeads()
-    if not headExpanderEnabled then return end
-    
-    -- Cooldown, um Überlastung zu vermeiden
-    local now = tick()
-    if now - lastUpdate < UPDATE_INTERVAL then
-        return
-    end
-    lastUpdate = now
-    
-    local headSize = 5
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-        headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-    end
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            expandHead(player.Character, headSize)
-        end
-    end
-end
-
--- Charakter hinzugefügt mit Delay
-local function onCharacterAdded(character)
-    task.wait(0.5)
-    if headExpanderEnabled then
-        local headSize = 5
-        if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-            headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-        end
-        expandHead(character, headSize)
-    end
-end
-
--- PUBLIC FUNCTIONS
+-- HEAD EXPANDER mit originalem LimbExtender
 function HeadExpander.toggle(state)
     headExpanderEnabled = state
     
     if state then
-        -- Einmalig alle aktuellen Köpfe aktualisieren
-        updateAllHeads()
-        
-        -- Heartbeat mit reduzierter Frequenz
-        if not updateConnection then
-            updateConnection = RunService.Heartbeat:Connect(updateAllHeads)
+        -- LimbExtender initialisieren (nur für Head)
+        if not limbInstance then
+            local LE = getLimbExtender()
+            limbInstance = LE({
+                LISTEN_FOR_INPUT = false,
+                USE_HIGHLIGHT = false,
+            })
         end
         
-        -- Für neue Spieler/Charaktere
-        local function onPlayerAdded(player)
-            if player ~= LocalPlayer then
-                player.CharacterAdded:Connect(onCharacterAdded)
-            end
-        end
+        -- Nur Head targeten
+        limbInstance:Set("TARGET_LIMB", "Head")
         
-        -- Bestehende Spieler
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                player.CharacterAdded:Connect(onCharacterAdded)
-            end
+        -- Head Size aus UI übernehmen
+        local headSize = 5
+        if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
+            headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
         end
+        limbInstance:Set("LIMB_SIZE", headSize)
         
-        -- Neue Spieler
-        Players.PlayerAdded:Connect(onPlayerAdded)
+        -- Aktivieren
+        limbInstance:Toggle(true)
         
     else
-        -- Ausschalten
-        if updateConnection then
-            updateConnection:Disconnect()
-            updateConnection = nil
+        -- Deaktivieren
+        if limbInstance then
+            limbInstance:Toggle(false)
         end
-        
-        restoreAllHeads()
-        originalHeadSizes = {}
-        originalHeadCollisions = {}
     end
 end
 
@@ -143,8 +59,12 @@ function HeadExpander.isEnabled()
 end
 
 function HeadExpander.updateSize()
-    if headExpanderEnabled then
-        updateAllHeads()
+    if headExpanderEnabled and limbInstance then
+        local headSize = 5
+        if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
+            headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
+        end
+        limbInstance:Set("LIMB_SIZE", headSize)
     end
 end
 
@@ -155,10 +75,9 @@ function HeadExpander.resetHeadExpander()
     end
 end
 
--- INFINITE JUMP (bleibt unverändert)
+-- INFINITE JUMP (unverändert)
 local infiniteJumpEnabled = false
 local infiniteJumpConnection = nil
-local UserInputService = game:GetService("UserInputService")
 
 function HeadExpander.toggleInfiniteJump(state)
     infiniteJumpEnabled = state
@@ -190,7 +109,7 @@ function HeadExpander.resetInfiniteJump()
     HeadExpander.toggleInfiniteJump(false)
 end
 
--- WALK SPEED (bleibt unverändert)
+-- WALK SPEED (unverändert)
 local walkSpeedEnabled = false
 local walkSpeedConnection = nil
 local normalWalkSpeed = 16
@@ -291,7 +210,7 @@ function HeadExpander.resetWalkSpeed()
 end
 
 function HeadExpander.init()
-    -- Nichts tun beim Start
+    -- Nichts tun
 end
 
 return HeadExpander
