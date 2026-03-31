@@ -1,13 +1,13 @@
 -- modules/ui.lua
 local UI = {}
-local Rayfield = _G.UltimateCheat.Rayfield
-local Window = _G.UltimateCheat.Window
-local AimTab = _G.UltimateCheat.AimTab
-local VisualsTab = _G.UltimateCheat.VisualsTab
-local PlayerTab = _G.UltimateCheat.PlayerTab
-local SettingsTab = _G.UltimateCheat.SettingsTab
 
--- Referenzen auf Toggles (für Updates)
+local Rayfield = nil
+local Window = nil
+local AimTab = nil
+local VisualsTab = nil
+local PlayerTab = nil
+local SettingsTab = nil
+
 local aimToggleRef = nil
 local playerESPToggleRef = nil
 local vehicleESPToggleRef = nil
@@ -15,7 +15,6 @@ local headToggleRef = nil
 local infiniteJumpToggleRef = nil
 local walkSpeedToggleRef = nil
 
--- AIM ASSIST UI
 function UI.createAimTab()
     AimTab:CreateSection("Aim Assist Settings")
     
@@ -24,8 +23,8 @@ function UI.createAimTab()
         CurrentValue = false,
         Flag = "AimToggle",
         Callback = function(Value)
-            local AimAssist = require(script.Parent.modules.aimassist)
-            AimAssist.toggle(Value)
+            local AimAssist = require(script.Parent.aimassist)
+            if AimAssist then AimAssist.toggle(Value) end
         end
     })
     
@@ -65,12 +64,12 @@ function UI.createAimTab()
         CurrentValue = 100,
         Flag = "AimFOV",
         Callback = function(Value)
-            local AimAssist = require(script.Parent.modules.aimassist)
-            local circle = AimAssist.getFOVCircle()
-            if circle then
-                circle.Radius = Value
+            local AimAssist = require(script.Parent.aimassist)
+            if AimAssist then
+                local circle = AimAssist.getFOVCircle()
+                if circle then circle.Radius = Value end
+                AimAssist.updateFOVCircle()
             end
-            AimAssist.updateFOVCircle()
         end
     })
     
@@ -79,10 +78,10 @@ function UI.createAimTab()
         CurrentValue = false,
         Flag = "ShowFOV",
         Callback = function(Value)
-            local AimAssist = require(script.Parent.modules.aimassist)
-            local circle = AimAssist.getFOVCircle()
-            if circle then
-                circle.Visible = Value and AimAssist.isEnabled()
+            local AimAssist = require(script.Parent.aimassist)
+            if AimAssist then
+                local circle = AimAssist.getFOVCircle()
+                if circle then circle.Visible = Value and AimAssist.isEnabled() end
             end
         end
     })
@@ -101,18 +100,17 @@ function UI.createAimTab()
     AimTab:CreateButton({
         Name = "Reset Aim Assist",
         Callback = function()
-            local AimAssist = require(script.Parent.modules.aimassist)
-            AimAssist.toggle(false)
-            aimToggleRef:Set(false)
-            local circle = AimAssist.getFOVCircle()
-            if circle then
-                circle.Visible = false
+            local AimAssist = require(script.Parent.aimassist)
+            if AimAssist then
+                AimAssist.toggle(false)
+                if aimToggleRef then aimToggleRef:Set(false) end
+                local circle = AimAssist.getFOVCircle()
+                if circle then circle.Visible = false end
             end
         end
     })
 end
 
--- VISUALS/ESP UI
 function UI.createVisualsTab()
     VisualsTab:CreateSection("Player ESP")
     
@@ -121,8 +119,8 @@ function UI.createVisualsTab()
         CurrentValue = false,
         Flag = "PlayerESP",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.togglePlayerESP(Value)
+            local ESP = require(script.Parent.esp)
+            if ESP then ESP.togglePlayerESP(Value) end
         end
     })
     
@@ -139,10 +137,10 @@ function UI.createVisualsTab()
         CurrentValue = true,
         Flag = "PlayerName",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.setShowPlayerNames(Value)
-            if ESP.isPlayerEspEnabled() then
-                ESP.updatePlayerVisuals()
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.setShowPlayerNames(Value)
+                if ESP.isPlayerEspEnabled() then ESP.updatePlayerVisuals() end
             end
         end
     })
@@ -152,10 +150,10 @@ function UI.createVisualsTab()
         CurrentValue = true,
         Flag = "PlayerDistance",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.setShowPlayerDistance(Value)
-            if ESP.isPlayerEspEnabled() then
-                ESP.updatePlayerVisuals()
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.setShowPlayerDistance(Value)
+                if ESP.isPlayerEspEnabled() then ESP.updatePlayerVisuals() end
             end
         end
     })
@@ -167,10 +165,10 @@ function UI.createVisualsTab()
         CurrentValue = 0.5,
         Flag = "PlayerFillTransparency",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.setPlayerFillTransparency(Value)
-            if ESP.isPlayerEspEnabled() then
-                ESP.updatePlayerVisuals()
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.setPlayerFillTransparency(Value)
+                if ESP.isPlayerEspEnabled() then ESP.updatePlayerVisuals() end
             end
         end
     })
@@ -180,10 +178,10 @@ function UI.createVisualsTab()
         Color = Color3.fromRGB(255, 255, 255),
         Flag = "PlayerESPColor",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.setPlayerColor(Value)
-            if ESP.isPlayerEspEnabled() then
-                ESP.updatePlayerVisuals()
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.setPlayerColor(Value)
+                if ESP.isPlayerEspEnabled() then ESP.updatePlayerVisuals() end
             end
         end
     })
@@ -195,8 +193,8 @@ function UI.createVisualsTab()
         CurrentValue = false,
         Flag = "VehicleESP",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.toggleVehicleESP(Value)
+            local ESP = require(script.Parent.esp)
+            if ESP then ESP.toggleVehicleESP(Value) end
         end
     })
     
@@ -213,10 +211,10 @@ function UI.createVisualsTab()
         CurrentValue = true,
         Flag = "VehicleDistance",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.setShowVehicleDistance(Value)
-            if ESP.isVehicleEspEnabled() then
-                ESP.updateVehicleESP()
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.setShowVehicleDistance(Value)
+                if ESP.isVehicleEspEnabled() then ESP.updateVehicleESP() end
             end
         end
     })
@@ -229,10 +227,10 @@ function UI.createVisualsTab()
         CurrentValue = 500,
         Flag = "VehicleMaxDistance",
         Callback = function(Value)
-            local ESP = require(script.Parent.modules.esp)
-            ESP.setMaxVehicleDistance(Value)
-            if ESP.isVehicleEspEnabled() then
-                ESP.updateVehicleESP()
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.setMaxVehicleDistance(Value)
+                if ESP.isVehicleEspEnabled() then ESP.updateVehicleESP() end
             end
         end
     })
@@ -270,8 +268,8 @@ function UI.createVisualsTab()
         CurrentValue = 0.8,
         Flag = "XRayTransparency",
         Callback = function(Value)
-            local XRay = require(script.Parent.modules.xray)
-            XRay.setTransparency(Value)
+            local XRay = require(script.Parent.xray)
+            if XRay then XRay.setTransparency(Value) end
         end
     })
     
@@ -280,12 +278,13 @@ function UI.createVisualsTab()
     VisualsTab:CreateButton({
         Name = "Reset Visuals",
         Callback = function()
-            local ESP = require(script.Parent.modules.esp)
-            ESP.togglePlayerESP(false)
-            ESP.toggleVehicleESP(false)
-            playerESPToggleRef:Set(false)
-            vehicleESPToggleRef:Set(false)
-            
+            local ESP = require(script.Parent.esp)
+            if ESP then
+                ESP.togglePlayerESP(false)
+                ESP.toggleVehicleESP(false)
+                if playerESPToggleRef then playerESPToggleRef:Set(false) end
+                if vehicleESPToggleRef then vehicleESPToggleRef:Set(false) end
+            end
             if workspace.CurrentCamera then
                 workspace.CurrentCamera.FieldOfView = 70
             end
@@ -293,7 +292,6 @@ function UI.createVisualsTab()
     })
 end
 
--- PLAYER TAB
 function UI.createPlayerTab()
     PlayerTab:CreateSection("Head Expander")
     
@@ -302,8 +300,8 @@ function UI.createPlayerTab()
         CurrentValue = false,
         Flag = "HeadToggle",
         Callback = function(Value)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.toggle(Value)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then HeadExpander.toggle(Value) end
         end
     })
     
@@ -325,8 +323,8 @@ function UI.createPlayerTab()
         CurrentValue = 5,
         Flag = "HeadSize",
         Callback = function(Value)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.updateSize()
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then HeadExpander.updateSize() end
         end
     })
     
@@ -339,8 +337,8 @@ function UI.createPlayerTab()
         CurrentValue = false,
         Flag = "InfiniteJumpToggle",
         Callback = function(Value)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.toggleInfiniteJump(Value)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then HeadExpander.toggleInfiniteJump(Value) end
         end
     })
     
@@ -361,8 +359,8 @@ function UI.createPlayerTab()
         CurrentValue = false,
         Flag = "WalkSpeedToggle",
         Callback = function(Value)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.toggleWalkSpeed(Value)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then HeadExpander.toggleWalkSpeed(Value) end
         end
     })
     
@@ -374,8 +372,8 @@ function UI.createPlayerTab()
         CurrentValue = 16,
         Flag = "NormalWalkSpeed",
         Callback = function(Value)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.setNormalWalkSpeed(Value)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then HeadExpander.setNormalWalkSpeed(Value) end
         end
     })
     
@@ -387,8 +385,8 @@ function UI.createPlayerTab()
         CurrentValue = 35,
         Flag = "SprintWalkSpeed",
         Callback = function(Value)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.setSprintWalkSpeed(Value)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then HeadExpander.setSprintWalkSpeed(Value) end
         end
     })
     
@@ -398,32 +396,37 @@ function UI.createPlayerTab()
     PlayerTab:CreateButton({
         Name = "Reset Head Expander",
         Callback = function()
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.toggle(false)
-            headToggleRef:Set(false)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then
+                HeadExpander.toggle(false)
+                if headToggleRef then headToggleRef:Set(false) end
+            end
         end
     })
     
     PlayerTab:CreateButton({
         Name = "Reset Infinite Jump",
         Callback = function()
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.toggleInfiniteJump(false)
-            infiniteJumpToggleRef:Set(false)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then
+                HeadExpander.toggleInfiniteJump(false)
+                if infiniteJumpToggleRef then infiniteJumpToggleRef:Set(false) end
+            end
         end
     })
     
     PlayerTab:CreateButton({
         Name = "Reset Walk Speed",
         Callback = function()
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            HeadExpander.toggleWalkSpeed(false)
-            walkSpeedToggleRef:Set(false)
+            local HeadExpander = require(script.Parent.headexpander)
+            if HeadExpander then
+                HeadExpander.toggleWalkSpeed(false)
+                if walkSpeedToggleRef then walkSpeedToggleRef:Set(false) end
+            end
         end
     })
 end
 
--- SETTINGS TAB
 function UI.createSettingsTab()
     SettingsTab:CreateSection("UI Settings")
     
@@ -442,7 +445,7 @@ function UI.createSettingsTab()
         MultipleOptions = false,
         Flag = "UITheme",
         Callback = function(Options)
-            Window.ModifyTheme(Options[1])
+            if Window then Window.ModifyTheme(Options[1]) end
         end
     })
     
@@ -452,14 +455,14 @@ function UI.createSettingsTab()
     SettingsTab:CreateButton({
         Name = "Save All Settings",
         Callback = function()
-            Rayfield:LoadConfiguration()
+            if Rayfield then Rayfield:LoadConfiguration() end
         end
     })
     
     SettingsTab:CreateButton({
         Name = "Load All Settings",
         Callback = function()
-            Rayfield:LoadConfiguration()
+            if Rayfield then Rayfield:LoadConfiguration() end
         end
     })
     
@@ -468,43 +471,43 @@ function UI.createSettingsTab()
     SettingsTab:CreateButton({
         Name = "Disable All Cheats",
         Callback = function()
-            local AimAssist = require(script.Parent.modules.aimassist)
-            local ESP = require(script.Parent.modules.esp)
-            local HeadExpander = require(script.Parent.modules.headexpander)
-            local XRay = require(script.Parent.modules.xray)
+            local AimAssist = require(script.Parent.aimassist)
+            local ESP = require(script.Parent.esp)
+            local HeadExpander = require(script.Parent.headexpander)
+            local XRay = require(script.Parent.xray)
             
-            AimAssist.toggle(false)
-            ESP.togglePlayerESP(false)
-            ESP.toggleVehicleESP(false)
-            HeadExpander.toggle(false)
-            HeadExpander.toggleInfiniteJump(false)
-            HeadExpander.toggleWalkSpeed(false)
-            
-            aimToggleRef:Set(false)
-            playerESPToggleRef:Set(false)
-            vehicleESPToggleRef:Set(false)
-            headToggleRef:Set(false)
-            infiniteJumpToggleRef:Set(false)
-            walkSpeedToggleRef:Set(false)
-            
-            local circle = AimAssist.getFOVCircle()
-            if circle then
-                circle.Visible = false
+            if AimAssist then AimAssist.toggle(false) end
+            if ESP then
+                ESP.togglePlayerESP(false)
+                ESP.toggleVehicleESP(false)
+            end
+            if HeadExpander then
+                HeadExpander.toggle(false)
+                HeadExpander.toggleInfiniteJump(false)
+                HeadExpander.toggleWalkSpeed(false)
             end
             
-            if XRay.isActive() then
-                XRay.toggle()
+            if aimToggleRef then aimToggleRef:Set(false) end
+            if playerESPToggleRef then playerESPToggleRef:Set(false) end
+            if vehicleESPToggleRef then vehicleESPToggleRef:Set(false) end
+            if headToggleRef then headToggleRef:Set(false) end
+            if infiniteJumpToggleRef then infiniteJumpToggleRef:Set(false) end
+            if walkSpeedToggleRef then walkSpeedToggleRef:Set(false) end
+            
+            if AimAssist then
+                local circle = AimAssist.getFOVCircle()
+                if circle then circle.Visible = false end
             end
+            
+            if XRay and XRay.isActive() then XRay.toggle() end
             
             if workspace.CurrentCamera then
                 workspace.CurrentCamera.FieldOfView = 70
             end
             
-            if _G.UltimateCheat.LocalPlayer.Character then
+            if _G.UltimateCheat and _G.UltimateCheat.LocalPlayer and _G.UltimateCheat.LocalPlayer.Character then
                 local humanoid = _G.UltimateCheat.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    humanoid.WalkSpeed = 16
-                end
+                if humanoid then humanoid.WalkSpeed = 16 end
             end
             
             print("All cheats disabled")
@@ -514,12 +517,11 @@ function UI.createSettingsTab()
     SettingsTab:CreateButton({
         Name = "Close UI",
         Callback = function()
-            Rayfield:Destroy()
+            if Rayfield then Rayfield:Destroy() end
         end
     })
 end
 
--- UI Update Funktionen (für Keybinds)
 function UI.updateAimToggle(state)
     if aimToggleRef then aimToggleRef:Set(state) end
 end
@@ -545,12 +547,21 @@ function UI.updateWalkSpeedToggle(state)
 end
 
 function UI.init()
+    if not _G.UltimateCheat then return end
+    
+    Rayfield = _G.UltimateCheat.Rayfield
+    Window = _G.UltimateCheat.Window
+    AimTab = _G.UltimateCheat.AimTab
+    VisualsTab = _G.UltimateCheat.VisualsTab
+    PlayerTab = _G.UltimateCheat.PlayerTab
+    SettingsTab = _G.UltimateCheat.SettingsTab
+    
     UI.createAimTab()
     UI.createVisualsTab()
     UI.createPlayerTab()
     UI.createSettingsTab()
     
-    Rayfield:LoadConfiguration()
+    if Rayfield then Rayfield:LoadConfiguration() end
 end
 
 return UI
