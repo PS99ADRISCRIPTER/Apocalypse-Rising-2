@@ -43,7 +43,7 @@ local Messages = {
 local ChosenMessage = Messages[math.random(1, #Messages)]
 
 local Window = Rayfield:CreateWindow({
-    Name = "Apocalypse Rising 2 Free Rain",
+    Name = "Apocalypse Rising 2 ",
     Icon = 107904589783906,
     LoadingTitle = "Ultimate Cheat Suite",
     LoadingSubtitle = ChosenMessage,
