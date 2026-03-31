@@ -1,14 +1,12 @@
--- main.lua
+-- main.lua (aktualisiert)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local mouse = LocalPlayer:GetMouse()
 
--- Rayfield UI Load
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Messages für Loading Screen
 local Messages = {
     "Aim Bot activated 🎯",
     "ESP Vision active 👁️",
@@ -21,7 +19,6 @@ local Messages = {
 }
 local ChosenMessage = Messages[math.random(1, #Messages)]
 
--- Fenster erstellen
 local Window = Rayfield:CreateWindow({
     Name = "Apocalypse Rising 2 Free Rain",
     Icon = 107904589783906,
@@ -36,13 +33,19 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
--- Tabs erstellen
 local AimTab = Window:CreateTab("Aim Assist", "target")
 local VisualsTab = Window:CreateTab("Visuals", "eye")
 local PlayerTab = Window:CreateTab("Player", "user")
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
--- Globale Tabelle für Module
+-- Module laden
+local AimAssist = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/aimassist.lua"))()
+local ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/esp.lua"))()
+local HeadExpander = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/headexpander.lua"))()
+local XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/ui.lua"))()
+
+-- Globale Tabelle
 _G.UltimateCheat = {
     Window = Window,
     AimTab = AimTab,
@@ -56,15 +59,13 @@ _G.UltimateCheat = {
     UserInputService = UserInputService,
     mouse = mouse,
     STUD_TO_M = 0.28,
-    PAUSED = false
+    PAUSED = false,
+    -- Module Referenzen
+    AimAssist = AimAssist,
+    ESP = ESP,
+    HeadExpander = HeadExpander,
+    XRay = XRay
 }
-
--- Module laden (wenn sie existieren)
-local AimAssist = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/aimassist.lua"))()
-local ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/esp.lua"))()
-local HeadExpander = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/headexpander.lua"))()
-local XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
-local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/ui.lua"))()
 
 -- Module initialisieren
 if AimAssist and AimAssist.init then AimAssist.init() end
@@ -139,7 +140,6 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
--- Update Loops
 RunService.Heartbeat:Connect(function()
     if _G.UltimateCheat.PAUSED then return end
     
