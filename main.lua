@@ -1,4 +1,27 @@
 -- main.lua
+-- Anti-Double-Load: Altes Skript beenden
+if _G.UltimateCheat and _G.UltimateCheat.Running then
+    -- Alte Instanz beenden und alle Cheats ausschalten
+    if _G.UltimateCheat.AimAssist then _G.UltimateCheat.AimAssist.toggle(false) end
+    if _G.UltimateCheat.ESP then
+        _G.UltimateCheat.ESP.togglePlayerESP(false)
+        _G.UltimateCheat.ESP.toggleVehicleESP(false)
+    end
+    if _G.UltimateCheat.HeadExpander then
+        _G.UltimateCheat.HeadExpander.toggle(false)
+        _G.UltimateCheat.HeadExpander.toggleInfiniteJump(false)
+        _G.UltimateCheat.HeadExpander.toggleWalkSpeed(false)
+    end
+    if _G.UltimateCheat.XRay and _G.UltimateCheat.XRay.isActive() then
+        _G.UltimateCheat.XRay.toggle()
+    end
+    if _G.UltimateCheat.Rayfield then
+        _G.UltimateCheat.Rayfield:Destroy()
+    end
+    print("Alte Cheat-Instanz wurde beendet")
+    wait(0.5)
+end
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
@@ -47,6 +70,7 @@ local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISC
 
 -- Globale Tabelle
 _G.UltimateCheat = {
+    Running = true,
     Window = Window,
     AimTab = AimTab,
     VisualsTab = VisualsTab,
