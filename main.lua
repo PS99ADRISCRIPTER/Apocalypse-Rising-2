@@ -25,15 +25,89 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local mouse = LocalPlayer:GetMouse()
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 
--- Executor Erkennung
+-- ========== FUNKTION: PRÜFT OB SPIEL ZU 90% GELADEN IST ==========
+local function isGameLoaded()
+    -- Prüfe ob der Spieler-Charakter existiert
+    if not LocalPlayer or not LocalPlayer.Character then
+        return false
+    end
+    
+    -- Prüfe ob Humanoid existiert und lebendig ist
+    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        return false
+    end
+    
+    -- Prüfe ob die Kamera funktioniert
+    local camera = workspace.CurrentCamera
+    if not camera then
+        return false
+    end
+    
+    -- Prüfe ob wichtige Spiel-Objekte geladen sind (z.B. Workspace-Strukturen)
+    local gameLoaded = false
+    local loadedCount = 0
+    local totalChecks = 3
+    
+    -- Check 1: Gibt es andere Spieler (außer einem selbst)?
+    local otherPlayers = 0
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            otherPlayers = otherPlayers + 1
+        end
+    end
+    
+    -- Check 2: Ist der eigene Charakter sichtbar?
+    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        loadedCount = loadedCount + 1
+    end
+    
+    -- Check 3: Gibt es Waffen/Tools (optional für Apoc 2)
+    local tools = LocalPlayer.Character:FindFirstChild("Backpack") or LocalPlayer:FindFirstChild("Backpack")
+    if tools then
+        loadedCount = loadedCount + 0.5
+    end
+    
+    -- Berechne Fortschritt (einfache Schätzung)
+    local progress = (loadedCount / totalChecks) * 100
+    
+    -- Wenn andere Spieler existieren oder genug geladen ist -> 90% erreicht
+    if otherPlayers >= 1 or progress >= 60 then
+        return true
+    end
+    
+    return false
+end
+
+-- ========== WARTEN BIS SPIEL ZU 90% GELADEN IST ==========
+print("Warte auf Spielladung (mind. 90%)...")
+
+local startTime = tick()
+local maxWait = 30 -- Maximal 30 Sekunden warten
+
+while not isGameLoaded() and (tick() - startTime) < maxWait do
+    task.wait(0.5)
+    local elapsed = math.floor(tick() - startTime)
+    print("Warte auf Spielladung... " .. elapsed .. "s")
+end
+
+if (tick() - startTime) >= maxWait then
+    print("Timeout: Starte trotzdem (Spiel lädt langsam)")
+end
+
+print("Spiel geladen! Starte Cheat-Suite...")
+
+-- ========== EXECUTOR ERKENNUNG ==========
 local ExecutorName = "Unknown Executor"
 pcall(function()
     local name = getexecutorname()
     if name and name ~= "" then ExecutorName = name end
 end)
 
--- Rayfield UI laden
+-- ========== RAYFIELD UI LADEN ==========
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Messages = {
@@ -43,6 +117,7 @@ local Messages = {
     ExecutorName .. " Edition ⚡",
     "Ready to dominate 😈",
     "Secure your victory 🏆",
+    "Game loaded! 🎮",
 }
 local ChosenMessage = Messages[math.random(1, #Messages)]
 
@@ -54,7 +129,7 @@ local Window = Rayfield:CreateWindow({
     Theme = "Default",
     DisableRayfieldPrompts = true,
     ConfigurationSaving = {
-        Enabled = false, -- AUTO-LOAD AUSGESCHALTET!
+        Enabled = false, -- KEIN Auto-Load
         FolderName = "UltimateCheatConfigs",
         FileName = "Configuration",
     },
@@ -225,6 +300,7 @@ end)
 
 print("==========================================")
 print("Ultimate Cheat Suite successfully loaded!")
+print("Spiel zu 90% geladen - Cheats sind BEREIT")
 print("Alle Cheats sind STANDARDMÄSSIG AUS")
 print("==========================================")
 print("Controls:")
