@@ -28,17 +28,47 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local mouse = LocalPlayer:GetMouse()
 
+-- Executor Erkennung
+local ExecutorName = "Unknown Executor"
+local executorIdentifiers = {
+    {name = "Synapse X", patterns = {"synapse", "syn x", "sirmeme"}, identifier = function() return pcall(function() return syn and syn.crypt end) end},
+    {name = "ScriptWare", patterns = {"script-ware", "scriptware"}, identifier = function() return pcall(function() return scriptware end) end},
+    {name = "Krnl", patterns = {"krnl", "krnl.ca"}, identifier = function() return pcall(function() return isfile and isfile("krnl.dll") end) end},
+    {name = "Fluxus", patterns = {"fluxus", "flux"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Fluxus" end) end},
+    {name = "Valyse", patterns = {"valyse", "val"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Valyse" end) end},
+    {name = "Electron", patterns = {"electron", "electronv3"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Electron" end) end},
+    {name = "Oxygen U", patterns = {"oxygen", "oxygenu"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Oxygen U" end) end},
+    {name = "Vega X", patterns = {"vega", "vegax"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Vega X" end) end},
+    {name = "Script-ware", patterns = {"script-ware", "sw"}, identifier = function() return pcall(function() return scriptware end) end},
+}
+
+for _, executor in pairs(executorIdentifiers) do
+    if executor.identifier() then
+        ExecutorName = executor.name
+        break
+    end
+end
+
+-- Fallback: Versuche getexecutorname()
+pcall(function()
+    local name = getexecutorname()
+    if name and name ~= "" then
+        ExecutorName = name
+    end
+end)
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Messages mit Executor
 local Messages = {
-    "Aim Bot activated 🎯",
-    "ESP Vision active 👁️",
-    "Head Expander loaded 🧠",
-    "Ultimate Cheat Suite ⚡",
-    "Ready to dominate 😈",
-    "Secure your victory 🏆",
-    "Made unstoppable 💪",
-    "Cheat Engine loaded 🔧"
+    "Playing with " .. ExecutorName .. " 🎯",
+    "Running on " .. ExecutorName .. " 👁️",
+    "Loaded by " .. ExecutorName .. " 🧠",
+    ExecutorName .. " Edition ⚡",
+    "Ready to dominate with " .. ExecutorName .. " 😈",
+    "Secure your victory with " .. ExecutorName .. " 🏆",
+    "Made unstoppable by " .. ExecutorName .. " 💪",
+    ExecutorName .. " Engine loaded 🔧"
 }
 local ChosenMessage = Messages[math.random(1, #Messages)]
 
@@ -71,6 +101,7 @@ local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISC
 -- Globale Tabelle
 _G.UltimateCheat = {
     Running = true,
+    Executor = ExecutorName,
     Window = Window,
     AimTab = AimTab,
     VisualsTab = VisualsTab,
@@ -97,7 +128,7 @@ if HeadExpander and HeadExpander.init then HeadExpander.init() end
 if XRay and XRay.init then XRay.init() end
 if UI and UI.init then UI.init() end
 
--- Input Handler
+-- Input Handler (wie gehabt)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
@@ -181,6 +212,7 @@ end)
 
 print("==========================================")
 print("Ultimate Cheat Suite successfully loaded!")
+print("Running on: " .. ExecutorName)
 print("==========================================")
 print("Controls:")
 print("- RightControl: Toggle UI")
