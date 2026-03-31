@@ -1,3 +1,4 @@
+-- modules/aimassist.lua
 local AimAssist = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -32,7 +33,7 @@ function AimAssist.updateFOVCircle()
     local camera = workspace.CurrentCamera
     ESPCircle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
     ESPCircle.Visible = aimEnabled
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.AimFOV then
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.AimFOV then
         ESPCircle.Radius = _G.UltimateCheat.Rayfield.Flags.AimFOV.CurrentValue
     end
 end
@@ -42,7 +43,7 @@ function AimAssist.findNearestPlayer()
     local closestDistance = 100
     local closestHead = nil
     
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.AimFOV then
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.AimFOV then
         closestDistance = _G.UltimateCheat.Rayfield.Flags.AimFOV.CurrentValue
     end
     
@@ -55,7 +56,7 @@ function AimAssist.findNearestPlayer()
             local targetPart = nil
             
             local targetPartName = "Head"
-            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.TargetPart then
+            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.TargetPart then
                 targetPartName = _G.UltimateCheat.Rayfield.Flags.TargetPart.CurrentOption[1]
             end
             
@@ -136,7 +137,7 @@ function AimAssist.permanentAim()
     local direction = (targetPos - currentMousePos)
     
     local speed = 0.3
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.AimSpeed then
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.AimSpeed then
         speed = _G.UltimateCheat.Rayfield.Flags.AimSpeed.CurrentValue
     end
     local step = direction * speed
@@ -178,3 +179,24 @@ function AimAssist.startAiming()
         aimConnection = RunService.RenderStepped:Connect(AimAssist.permanentAim)
     end
 end
+
+function AimAssist.stopAiming()
+    aiming = false
+    lockedTarget = nil
+    currentTarget = nil
+    
+    if aimConnection then
+        aimConnection:Disconnect()
+        aimConnection = nil
+    end
+end
+
+function AimAssist.getFOVCircle()
+    return ESPCircle
+end
+
+function AimAssist.init()
+    AimAssist.createFOVCircle()
+end
+
+return AimAssist
