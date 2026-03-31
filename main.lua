@@ -36,6 +36,7 @@ end)
 -- Rayfield laden
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Messages
 local Messages = {
     "Playing with " .. ExecutorName .. " 🎯",
     "Running on " .. ExecutorName .. " 👁️",
@@ -43,6 +44,7 @@ local Messages = {
 }
 local ChosenMessage = Messages[math.random(1, #Messages)]
 
+-- Fenster erstellen
 local Window = Rayfield:CreateWindow({
     Name = "Apocalypse Rising 2 Free Rain",
     Icon = 107904589783906,
@@ -57,10 +59,10 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
--- KURZE WARTEZEIT, DAMIT RAYFIELD FERTIG IST
-task.wait(0.2)
+-- WICHTIG: Warten bis Fenster bereit ist
+task.wait(0.5)
 
--- Tabs erstellen (mit Prüfung)
+-- Tabs erstellen
 local AimTab = Window:CreateTab("Aim Assist", "target")
 local VisualsTab = Window:CreateTab("Visuals", "eye")
 local PlayerTab = Window:CreateTab("Player", "user")
@@ -68,39 +70,17 @@ local SettingsTab = Window:CreateTab("Settings", "settings")
 
 -- Prüfen ob Tabs existieren
 if not AimTab or not VisualsTab or not PlayerTab or not SettingsTab then
-    warn("Fehler: Tabs konnten nicht erstellt werden")
-    return
+    error("Tabs konnten nicht erstellt werden")
 end
 
 print("Tabs erfolgreich erstellt")
 
--- Module laden (mit Fehlerbehandlung)
-local AimAssist, ESP, HeadExpander, XRay, UI
-
-pcall(function()
-    AimAssist = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/aimassist.lua"))()
-    print("AimAssist geladen")
-end)
-
-pcall(function()
-    ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/esp.lua"))()
-    print("ESP geladen")
-end)
-
-pcall(function()
-    HeadExpander = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/headexpander.lua"))()
-    print("HeadExpander geladen")
-end)
-
-pcall(function()
-    XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
-    print("Xray geladen")
-end)
-
-pcall(function()
-    UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/ui.lua"))()
-    print("UI geladen")
-end)
+-- Module laden
+local AimAssist = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/aimassist.lua"))()
+local ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/esp.lua"))()
+local HeadExpander = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/headexpander.lua"))()
+local XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
+local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/ui.lua"))()
 
 -- Globale Tabelle
 _G.UltimateCheat = {
@@ -125,54 +105,53 @@ _G.UltimateCheat = {
     XRay = XRay
 }
 
--- Module initialisieren (mit Fehlerbehandlung)
-pcall(function() if AimAssist and AimAssist.init then AimAssist.init() AimAssist.toggle(false) end end)
-pcall(function() if ESP and ESP.init then ESP.init() ESP.togglePlayerESP(false) ESP.toggleVehicleESP(false) end end)
-pcall(function() if HeadExpander and HeadExpander.init then HeadExpander.init() HeadExpander.toggle(false) HeadExpander.toggleInfiniteJump(false) HeadExpander.toggleWalkSpeed(false) end end)
-pcall(function() if XRay and XRay.init then XRay.init() end end)
-pcall(function() if UI and UI.init then UI.init() end end)
+-- Module initialisieren
+if AimAssist and AimAssist.init then AimAssist.init() AimAssist.toggle(false) end
+if ESP and ESP.init then ESP.init() ESP.togglePlayerESP(false) ESP.toggleVehicleESP(false) end
+if HeadExpander and HeadExpander.init then HeadExpander.init() HeadExpander.toggle(false) HeadExpander.toggleInfiniteJump(false) HeadExpander.toggleWalkSpeed(false) end
+if XRay and XRay.init then XRay.init() end
+if UI and UI.init then UI.init() end
 
 -- Input Handler
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
     if input.KeyCode == Enum.KeyCode.RightControl then
-        if Rayfield then Rayfield:SetVisibility(not Rayfield:IsVisible()) end
+        Rayfield:SetVisibility(not Rayfield:IsVisible())
     end
     
     if input.KeyCode == Enum.KeyCode.F5 and AimAssist then
         local newState = not AimAssist.isEnabled()
         AimAssist.toggle(newState)
-        if UI and UI.updateAimToggle then UI.updateAimToggle(newState) end
+        if UI.updateAimToggle then UI.updateAimToggle(newState) end
     end
     
     if input.KeyCode == Enum.KeyCode.F4 and ESP then
         local newState = not ESP.isPlayerEspEnabled()
         ESP.togglePlayerESP(newState)
-        if UI and UI.updatePlayerESPToggle then UI.updatePlayerESPToggle(newState) end
+        if UI.updatePlayerESPToggle then UI.updatePlayerESPToggle(newState) end
     end
     
     if input.KeyCode == Enum.KeyCode.H and HeadExpander then
         local newState = not HeadExpander.isEnabled()
         HeadExpander.toggle(newState)
-        if UI and UI.updateHeadToggle then UI.updateHeadToggle(newState) end
+        if UI.updateHeadToggle then UI.updateHeadToggle(newState) end
     end
     
     if input.KeyCode == Enum.KeyCode.V and HeadExpander then
         local newState = not HeadExpander.isInfiniteJumpEnabled()
         HeadExpander.toggleInfiniteJump(newState)
-        if UI and UI.updateInfiniteJumpToggle then UI.updateInfiniteJumpToggle(newState) end
+        if UI.updateInfiniteJumpToggle then UI.updateInfiniteJumpToggle(newState) end
     end
     
     if input.KeyCode == Enum.KeyCode.B and HeadExpander then
         local newState = not HeadExpander.isWalkSpeedEnabled()
         HeadExpander.toggleWalkSpeed(newState)
-        if UI and UI.updateWalkSpeedToggle then UI.updateWalkSpeedToggle(newState) end
+        if UI.updateWalkSpeedToggle then UI.updateWalkSpeedToggle(newState) end
     end
     
     if input.KeyCode == Enum.KeyCode.F3 then
         _G.UltimateCheat.PAUSED = not _G.UltimateCheat.PAUSED
-        print("Visuals Pause: " .. (_G.UltimateCheat.PAUSED and "ON" or "OFF"))
     end
     
     if input.KeyCode == Enum.KeyCode.F8 and XRay then
@@ -182,7 +161,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.F9 and ESP then
         local newState = not ESP.isVehicleEspEnabled()
         ESP.toggleVehicleESP(newState)
-        if UI and UI.updateVehicleESPToggle then UI.updateVehicleESPToggle(newState) end
+        if UI.updateVehicleESPToggle then UI.updateVehicleESPToggle(newState) end
     end
     
     if AimAssist and AimAssist.isEnabled() and input.UserInputType == Enum.UserInputType.MouseButton2 then
