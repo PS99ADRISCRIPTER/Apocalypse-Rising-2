@@ -89,6 +89,22 @@ local function removeHighlight(object)
     end
 end
 
+local function removeLabel(object)
+    if object and object:FindFirstChild("Head") then
+        local head = object.Head
+        if head and head:FindFirstChild("PlayerLabel") then
+            head.PlayerLabel:Destroy()
+        end
+    end
+    
+    if object then
+        local primaryPart = object.PrimaryPart or object:FindFirstChildWhichIsA("BasePart")
+        if primaryPart and primaryPart:FindFirstChild("VehicleLabel") then
+            primaryPart.VehicleLabel:Destroy()
+        end
+    end
+end
+
 local function createPlayerLabel(char, player)
     if not char or not char:FindFirstChild("Head") then return nil end
     
@@ -220,32 +236,11 @@ local function createVehicleLabel(vehicle)
     return billboard
 end
 
-local function removeLabel(object)
-    if object and object:FindFirstChild("Head") then
-        local head = object.Head
-        if head and head:FindFirstChild("PlayerLabel") then
-            head.PlayerLabel:Destroy()
-        end
-    end
-    
-    if object then
-        local primaryPart = object.PrimaryPart or object:FindFirstChildWhichIsA("BasePart")
-        if primaryPart and primaryPart:FindFirstChild("VehicleLabel") then
-            primaryPart.VehicleLabel:Destroy()
-        end
-    end
-end
-
 local lastPlayerUpdate = 0
 local PLAYER_UPDATE_INTERVAL = 0.2
 
 function ESP.updatePlayerVisuals()
     if _G.UltimateCheat and _G.UltimateCheat.PAUSED then return end
-    if not playerEspEnabled then return end
-    
-    local currentTime = tick()
-    if currentTime - lastPlayerUpdate < PLAYER_UPDATE_INTERVAL then return end
-    lastPlayerUpdate = currentTime
     
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
@@ -255,44 +250,51 @@ function ESP.updatePlayerVisuals()
                 if root then
                     local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                     
-                    local highlight = char:FindFirstChild("PlayerHighlight")
-                    if not highlight then
-                        highlight = addPlayerHighlight(char)
-                        playerHighlights[player] = highlight
-                    else
-                        highlight.FillColor = PLAYER_ESP_COLOR
-                        highlight.OutlineColor = PLAYER_ESP_COLOR
-                        highlight.FillTransparency = PLAYER_FILL_TRANSPARENCY
-                    end
-                    
-                    local label = char:FindFirstChild("Head") and char.Head:FindFirstChild("PlayerLabel")
-                    if not label then
-                        label = createPlayerLabel(char, player)
-                        playerGuis[player] = label
-                    else
-                        local container = label:FindFirstChild("Container")
-                        if container then
-                            local nameText = container:FindFirstChild("NameText")
-                            local distanceText = container:FindFirstChild("DistanceText")
-                            
-                            if nameText then
-                                nameText.Visible = SHOW_PLAYER_NAMES
-                            end
-                            if distanceText then
-                                distanceText.Visible = SHOW_PLAYER_DISTANCE
-                                if SHOW_PLAYER_DISTANCE and myRoot then
-                                    local distStuds = (myRoot.Position - root.Position).Magnitude
-                                    local distMeters = distStuds * STUD_TO_M
-                                    distanceText.Text = string.format("%.1f m", distMeters)
-                                else
-                                    distanceText.Text = ""
+                    if playerEspEnabled then
+                        -- Highlight
+                        local highlight = char:FindFirstChild("PlayerHighlight")
+                        if not highlight then
+                            highlight = addPlayerHighlight(char)
+                            playerHighlights[player] = highlight
+                        else
+                            highlight.FillColor = PLAYER_ESP_COLOR
+                            highlight.OutlineColor = PLAYER_ESP_COLOR
+                            highlight.FillTransparency = PLAYER_FILL_TRANSPARENCY
+                        end
+                        
+                        -- Label
+                        local label = char:FindFirstChild("Head") and char.Head:FindFirstChild("PlayerLabel")
+                        if not label then
+                            label = createPlayerLabel(char, player)
+                            playerGuis[player] = label
+                        else
+                            local container = label:FindFirstChild("Container")
+                            if container then
+                                local nameText = container:FindFirstChild("NameText")
+                                local distanceText = container:FindFirstChild("DistanceText")
+                                
+                                if nameText then
+                                    nameText.Visible = SHOW_PLAYER_NAMES
+                                end
+                                if distanceText then
+                                    distanceText.Visible = SHOW_PLAYER_DISTANCE
+                                    if SHOW_PLAYER_DISTANCE and myRoot then
+                                        local distStuds = (myRoot.Position - root.Position).Magnitude
+                                        local distMeters = distStuds * STUD_TO_M
+                                        distanceText.Text = string.format("%.1f m", distMeters)
+                                    else
+                                        distanceText.Text = ""
+                                    end
                                 end
                             end
                         end
+                    else
+                        -- ESP ist aus -> alles entfernen
+                        removeHighlight(char)
+                        removeLabel(char)
+                        playerHighlights[player] = nil
+                        playerGuis[player] = nil
                     end
-                else
-                    removeHighlight(char)
-                    removeLabel(char)
                 end
             else
                 if playerHighlights[player] then
@@ -313,11 +315,6 @@ local VEHICLE_UPDATE_INTERVAL = 0.3
 
 function ESP.updateVehicleESP()
     if _G.UltimateCheat and _G.UltimateCheat.PAUSED then return end
-    if not vehicleEspEnabled then return end
-    
-    local currentTime = tick()
-    if currentTime - lastVehicleUpdate < VEHICLE_UPDATE_INTERVAL then return end
-    lastVehicleUpdate = currentTime
     
     local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not myRoot then return end
@@ -332,7 +329,7 @@ function ESP.updateVehicleESP()
             if primaryPart then
                 local distance = (myRoot.Position - primaryPart.Position).Magnitude
                 
-                if distance <= MAX_VEHICLE_DISTANCE then
+                if vehicleEspEnabled and distance <= MAX_VEHICLE_DISTANCE then
                     local highlight = vehicle:FindFirstChild("VehicleHighlight")
                     if not highlight then
                         highlight = addVehicleHighlight(vehicle)
@@ -428,6 +425,32 @@ function ESP.toggleVehicleESP(state)
         end
         cleanupVehicleVisuals()
     end
+end
+
+function ESP.resetPlayerESP()
+    ESP.togglePlayerESP(false)
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+        _G.UltimateCheat.Rayfield.Flags.PlayerESP:Set(false)
+        _G.UltimateCheat.Rayfield.Flags.PlayerName:Set(true)
+        _G.UltimateCheat.Rayfield.Flags.PlayerDistance:Set(true)
+        _G.UltimateCheat.Rayfield.Flags.PlayerFillTransparency:Set(0.5)
+        _G.UltimateCheat.Rayfield.Flags.PlayerESPColor:Set(Color3.fromRGB(255, 255, 255))
+    end
+    PLAYER_ESP_COLOR = Color3.fromRGB(255, 255, 255)
+    PLAYER_FILL_TRANSPARENCY = 0.5
+    SHOW_PLAYER_NAMES = true
+    SHOW_PLAYER_DISTANCE = true
+end
+
+function ESP.resetVehicleESP()
+    ESP.toggleVehicleESP(false)
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+        _G.UltimateCheat.Rayfield.Flags.VehicleESP:Set(false)
+        _G.UltimateCheat.Rayfield.Flags.VehicleDistance:Set(true)
+        _G.UltimateCheat.Rayfield.Flags.VehicleMaxDistance:Set(500)
+    end
+    SHOW_VEHICLE_DISTANCE = true
+    MAX_VEHICLE_DISTANCE = 500
 end
 
 function ESP.isPlayerEspEnabled() return playerEspEnabled end
