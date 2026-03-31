@@ -20,20 +20,32 @@ local sprintWalkSpeed = 35
 local currentWalkSpeed = 16
 local isSprinting = false
 
--- HEAD EXPANDER
+-- Cooldown für Head Expander Updates (reduziert CPU-Last)
+local lastHeadUpdate = 0
+local HEAD_UPDATE_INTERVAL = 0.5 -- Nur alle 0.5 Sekunden aktualisieren
+
+-- HEAD EXPANDER - Optimiert
 local function expandHead(character, size)
     if not character then return end
     
     local head = character:FindFirstChild("Head")
     if not head then return end
     
+    -- Prüfe ob sich die Größe bereits geändert hat (verhindert unnötige Setzungen)
+    if head.Size == Vector3.new(size, size, size) then
+        return -- Keine Änderung nötig
+    end
+    
     if not originalHeadSizes[character] then
         originalHeadSizes[character] = head.Size
         originalHeadCollisions[character] = head.CanCollide
     end
     
-    head.Size = Vector3.new(size, size, size)
-    head.CanCollide = true
+    -- Nur setzen wenn nötig
+    pcall(function()
+        head.Size = Vector3.new(size, size, size)
+        head.CanCollide = true
+    end)
 end
 
 local function restoreHead(character)
@@ -42,8 +54,10 @@ local function restoreHead(character)
     if originalHeadSizes[character] then
         local head = character:FindFirstChild("Head")
         if head then
-            head.Size = originalHeadSizes[character]
-            head.CanCollide = originalHeadCollisions[character] or false
+            pcall(function()
+                head.Size = originalHeadSizes[character]
+                head.CanCollide = originalHeadCollisions[character] or false
+            end)
         end
         originalHeadSizes[character] = nil
         originalHeadCollisions[character] = nil
@@ -61,6 +75,12 @@ end
 local function updateAllHeads()
     if not headExpanderEnabled then return end
     
+    local currentTime = tick()
+    if currentTime - lastHeadUpdate < HEAD_UPDATE_INTERVAL then
+        return -- Zu früh, überspringe Update
+    end
+    lastHeadUpdate = currentTime
+    
     local headSize = 5
     if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
         headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
@@ -73,30 +93,74 @@ local function updateAllHeads()
     end
 end
 
+-- Charakter-Hinzufügung mit Delay (verhindert Überlastung)
+local function onCharacterAdded(player, character)
+    task.wait(0.5) -- Warte 0.5 Sekunden bevor Head geändert wird
+    if headExpanderEnabled and player ~= LocalPlayer then
+        local headSize = 5
+        if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
+            headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
+        end
+        expandHead(character, headSize)
+    end
+end
+
 function HeadExpander.toggle(state)
     headExpanderEnabled = state
     
     if state then
+        -- Einmalige Initial-Update
         updateAllHeads()
+        
+        -- Heartbeat mit reduzierter Frequenz (nur alle 0.5 Sekunden)
         headExpanderConnection = RunService.Heartbeat:Connect(updateAllHeads)
         
+        -- CharacterAdded mit Delay verbinden
         for _, player in pairs(Players:GetPlayers()) do
-            player.CharacterAdded:Connect(function(character)
-                task.wait(0.1)
-                if headExpanderEnabled and player ~= LocalPlayer then
-                    local headSize = 5
-                    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-                        headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-                    end
-                    expandHead(character, headSize)
+            if player ~= LocalPlayer then
+                local connection
+                connection = player.CharacterAdded:Connect(function(character)
+                    onCharacterAdded(player, character)
+                end)
+                -- Speichere connection falls nötig (optional)
+                if not player._headExpanderConnection then
+                    player._headExpanderConnection = connection
                 end
-            end)
+            end
         end
+        
+        -- Für neue Spieler
+        local playerAddedConnection
+        playerAddedConnection = Players.PlayerAdded:Connect(function(player)
+            if player ~= LocalPlayer then
+                local connection
+                connection = player.CharacterAdded:Connect(function(character)
+                    onCharacterAdded(player, character)
+                end)
+                player._headExpanderConnection = connection
+            end
+        end)
+        _G.UltimateCheat._playerAddedConnection = playerAddedConnection
+        
     else
+        -- Head Expander ausschalten
         if headExpanderConnection then
             headExpanderConnection:Disconnect()
             headExpanderConnection = nil
         end
+        
+        -- Connections aufräumen
+        for _, player in pairs(Players:GetPlayers()) do
+            if player._headExpanderConnection then
+                player._headExpanderConnection:Disconnect()
+                player._headExpanderConnection = nil
+            end
+        end
+        if _G.UltimateCheat and _G.UltimateCheat._playerAddedConnection then
+            _G.UltimateCheat._playerAddedConnection:Disconnect()
+            _G.UltimateCheat._playerAddedConnection = nil
+        end
+        
         restoreAllHeads()
         originalHeadSizes = {}
         originalHeadCollisions = {}
@@ -120,7 +184,7 @@ function HeadExpander.resetHeadExpander()
     end
 end
 
--- INFINITE JUMP
+-- INFINITE JUMP (unverändert)
 function HeadExpander.toggleInfiniteJump(state)
     infiniteJumpEnabled = state
     
@@ -151,7 +215,7 @@ function HeadExpander.resetInfiniteJump()
     HeadExpander.toggleInfiniteJump(false)
 end
 
--- WALK SPEED
+-- WALK SPEED (unverändert)
 local function updateWalkSpeed()
     if not walkSpeedEnabled or not LocalPlayer.Character then return end
     
@@ -245,6 +309,7 @@ function HeadExpander.resetWalkSpeed()
 end
 
 function HeadExpander.init()
+    -- Nichts tun beim Start
 end
 
 return HeadExpander
