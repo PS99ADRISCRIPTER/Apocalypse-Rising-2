@@ -1,4 +1,4 @@
--- modules/ui.lua (korrigiert)
+-- modules/ui.lua
 local UI = {}
 
 local Rayfield = nil
@@ -15,7 +15,7 @@ local headToggleRef = nil
 local infiniteJumpToggleRef = nil
 local walkSpeedToggleRef = nil
 
--- Module Referenzen (werden später gesetzt)
+-- Module Referenzen
 local AimAssist = nil
 local ESP = nil
 local HeadExpander = nil
@@ -104,10 +104,8 @@ function UI.createAimTab()
         Name = "Reset Aim Assist",
         Callback = function()
             if AimAssist then
-                AimAssist.toggle(false)
+                AimAssist.resetAimAssist()
                 if aimToggleRef then aimToggleRef:Set(false) end
-                local circle = AimAssist.getFOVCircle()
-                if circle then circle.Visible = false end
             end
         end
     })
@@ -269,13 +267,38 @@ function UI.createVisualsTab()
     VisualsTab:CreateDivider()
     
     VisualsTab:CreateButton({
-        Name = "Reset Visuals",
+        Name = "Reset Player ESP",
         Callback = function()
             if ESP then
-                ESP.togglePlayerESP(false)
-                ESP.toggleVehicleESP(false)
+                ESP.resetPlayerESP()
+                if playerESPToggleRef then playerESPToggleRef:Set(false) end
+            end
+        end
+    })
+    
+    VisualsTab:CreateButton({
+        Name = "Reset Vehicle ESP",
+        Callback = function()
+            if ESP then
+                ESP.resetVehicleESP()
+                if vehicleESPToggleRef then vehicleESPToggleRef:Set(false) end
+            end
+        end
+    })
+    
+    VisualsTab:CreateButton({
+        Name = "Reset All Visuals",
+        Callback = function()
+            if ESP then
+                ESP.resetPlayerESP()
+                ESP.resetVehicleESP()
                 if playerESPToggleRef then playerESPToggleRef:Set(false) end
                 if vehicleESPToggleRef then vehicleESPToggleRef:Set(false) end
+            end
+            if XRay and XRay.isActive() then XRay.toggle() end
+            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+                _G.UltimateCheat.Rayfield.Flags.XRayTransparency:Set(0.8)
+                _G.UltimateCheat.Rayfield.Flags.CameraFOV:Set(70)
             end
             if workspace.CurrentCamera then
                 workspace.CurrentCamera.FieldOfView = 70
@@ -308,7 +331,7 @@ function UI.createPlayerTab()
     
     PlayerTab:CreateSlider({
         Name = "Head Size",
-        Range = {2, 20},
+        Range = {2, 35},
         Increment = 0.5,
         Suffix = " studs",
         CurrentValue = 5,
@@ -354,7 +377,7 @@ function UI.createPlayerTab()
     
     PlayerTab:CreateSlider({
         Name = "Normal Walk Speed",
-        Range = {16, 35},
+        Range = {16, 50},
         Increment = 1,
         Suffix = " studs/sec",
         CurrentValue = 16,
@@ -366,7 +389,7 @@ function UI.createPlayerTab()
     
     PlayerTab:CreateSlider({
         Name = "Sprint Walk Speed",
-        Range = {25, 35},
+        Range = {25, 80},
         Increment = 1,
         Suffix = " studs/sec",
         CurrentValue = 35,
@@ -383,7 +406,7 @@ function UI.createPlayerTab()
         Name = "Reset Head Expander",
         Callback = function()
             if HeadExpander then
-                HeadExpander.toggle(false)
+                HeadExpander.resetHeadExpander()
                 if headToggleRef then headToggleRef:Set(false) end
             end
         end
@@ -393,7 +416,7 @@ function UI.createPlayerTab()
         Name = "Reset Infinite Jump",
         Callback = function()
             if HeadExpander then
-                HeadExpander.toggleInfiniteJump(false)
+                HeadExpander.resetInfiniteJump()
                 if infiniteJumpToggleRef then infiniteJumpToggleRef:Set(false) end
             end
         end
@@ -403,7 +426,21 @@ function UI.createPlayerTab()
         Name = "Reset Walk Speed",
         Callback = function()
             if HeadExpander then
-                HeadExpander.toggleWalkSpeed(false)
+                HeadExpander.resetWalkSpeed()
+                if walkSpeedToggleRef then walkSpeedToggleRef:Set(false) end
+            end
+        end
+    })
+    
+    PlayerTab:CreateButton({
+        Name = "Reset All Player Settings",
+        Callback = function()
+            if HeadExpander then
+                HeadExpander.resetHeadExpander()
+                HeadExpander.resetInfiniteJump()
+                HeadExpander.resetWalkSpeed()
+                if headToggleRef then headToggleRef:Set(false) end
+                if infiniteJumpToggleRef then infiniteJumpToggleRef:Set(false) end
                 if walkSpeedToggleRef then walkSpeedToggleRef:Set(false) end
             end
         end
@@ -438,7 +475,7 @@ function UI.createSettingsTab()
     SettingsTab:CreateButton({
         Name = "Save All Settings",
         Callback = function()
-            if Rayfield then Rayfield:LoadConfiguration() end
+            if Rayfield then Rayfield:SaveConfiguration() end
         end
     })
     
@@ -450,6 +487,7 @@ function UI.createSettingsTab()
     })
     
     SettingsTab:CreateDivider()
+    SettingsTab:CreateSection("Reset Everything")
     
     SettingsTab:CreateButton({
         Name = "Disable All Cheats",
@@ -464,6 +502,7 @@ function UI.createSettingsTab()
                 HeadExpander.toggleInfiniteJump(false)
                 HeadExpander.toggleWalkSpeed(false)
             end
+            if XRay and XRay.isActive() then XRay.toggle() end
             
             if aimToggleRef then aimToggleRef:Set(false) end
             if playerESPToggleRef then playerESPToggleRef:Set(false) end
@@ -477,8 +516,6 @@ function UI.createSettingsTab()
                 if circle then circle.Visible = false end
             end
             
-            if XRay and XRay.isActive() then XRay.toggle() end
-            
             if workspace.CurrentCamera then
                 workspace.CurrentCamera.FieldOfView = 70
             end
@@ -489,6 +526,51 @@ function UI.createSettingsTab()
             end
             
             print("All cheats disabled")
+        end
+    })
+    
+    SettingsTab:CreateButton({
+        Name = "Reset All Settings (Defaults)",
+        Callback = function()
+            -- Aim Assist reset
+            if AimAssist then AimAssist.resetAimAssist() end
+            if aimToggleRef then aimToggleRef:Set(false) end
+            
+            -- ESP reset
+            if ESP then
+                ESP.resetPlayerESP()
+                ESP.resetVehicleESP()
+                if playerESPToggleRef then playerESPToggleRef:Set(false) end
+                if vehicleESPToggleRef then vehicleESPToggleRef:Set(false) end
+            end
+            
+            -- Player reset
+            if HeadExpander then
+                HeadExpander.resetHeadExpander()
+                HeadExpander.resetInfiniteJump()
+                HeadExpander.resetWalkSpeed()
+                if headToggleRef then headToggleRef:Set(false) end
+                if infiniteJumpToggleRef then infiniteJumpToggleRef:Set(false) end
+                if walkSpeedToggleRef then walkSpeedToggleRef:Set(false) end
+            end
+            
+            -- X-Ray reset
+            if XRay and XRay.isActive() then XRay.toggle() end
+            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags then
+                _G.UltimateCheat.Rayfield.Flags.XRayTransparency:Set(0.8)
+                _G.UltimateCheat.Rayfield.Flags.CameraFOV:Set(70)
+            end
+            
+            if workspace.CurrentCamera then
+                workspace.CurrentCamera.FieldOfView = 70
+            end
+            
+            if _G.UltimateCheat and _G.UltimateCheat.LocalPlayer and _G.UltimateCheat.LocalPlayer.Character then
+                local humanoid = _G.UltimateCheat.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then humanoid.WalkSpeed = 16 end
+            end
+            
+            print("All settings reset to default")
         end
     })
     
@@ -534,7 +616,6 @@ function UI.init()
     PlayerTab = _G.UltimateCheat.PlayerTab
     SettingsTab = _G.UltimateCheat.SettingsTab
     
-    -- Module Referenzen aus _G.UltimateCheat holen
     AimAssist = _G.UltimateCheat.AimAssist
     ESP = _G.UltimateCheat.ESP
     HeadExpander = _G.UltimateCheat.HeadExpander
