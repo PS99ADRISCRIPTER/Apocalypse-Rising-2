@@ -1,11 +1,9 @@
--- modules/aimassist.lua
 local AimAssist = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local mouse = LocalPlayer:GetMouse()
 
--- Variablen
 local aimEnabled = false
 local aiming = false
 local aimConnection = nil
@@ -13,7 +11,6 @@ local currentTarget = nil
 local lockedTarget = nil
 local ESPCircle = nil
 
--- FOV Circle erstellen
 function AimAssist.createFOVCircle()
     if ESPCircle then ESPCircle:Remove() end
     
@@ -35,13 +32,19 @@ function AimAssist.updateFOVCircle()
     local camera = workspace.CurrentCamera
     ESPCircle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
     ESPCircle.Visible = aimEnabled
-    ESPCircle.Radius = _G.UltimateCheat.Rayfield.Flags.AimFOV and _G.UltimateCheat.Rayfield.Flags.AimFOV.CurrentValue or 100
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.AimFOV then
+        ESPCircle.Radius = _G.UltimateCheat.Rayfield.Flags.AimFOV.CurrentValue
+    end
 end
 
 function AimAssist.findNearestPlayer()
     local closestPlayer = nil
-    local closestDistance = _G.UltimateCheat.Rayfield.Flags.AimFOV and _G.UltimateCheat.Rayfield.Flags.AimFOV.CurrentValue or 100
+    local closestDistance = 100
     local closestHead = nil
+    
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.AimFOV then
+        closestDistance = _G.UltimateCheat.Rayfield.Flags.AimFOV.CurrentValue
+    end
     
     local camera = workspace.CurrentCamera
     local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
@@ -51,7 +54,11 @@ function AimAssist.findNearestPlayer()
             local humanoid = otherPlayer.Character:FindFirstChild("Humanoid")
             local targetPart = nil
             
-            local targetPartName = _G.UltimateCheat.Rayfield.Flags.TargetPart and _G.UltimateCheat.Rayfield.Flags.TargetPart.CurrentOption[1] or "Head"
+            local targetPartName = "Head"
+            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.TargetPart then
+                targetPartName = _G.UltimateCheat.Rayfield.Flags.TargetPart.CurrentOption[1]
+            end
+            
             if targetPartName == "Head" then
                 targetPart = otherPlayer.Character:FindFirstChild("Head")
             elseif targetPartName == "HumanoidRootPart" then
@@ -125,10 +132,13 @@ function AimAssist.permanentAim()
     local screenPoint = workspace.CurrentCamera:WorldToScreenPoint(currentTarget.Position)
     local targetPos = Vector2.new(screenPoint.X, screenPoint.Y)
     
-    local currentMousePos = Vector2.new(_G.UltimateCheat.mouse.X, _G.UltimateCheat.mouse.Y)
+    local currentMousePos = Vector2.new(mouse.X, mouse.Y)
     local direction = (targetPos - currentMousePos)
     
-    local speed = _G.UltimateCheat.Rayfield.Flags.AimSpeed and _G.UltimateCheat.Rayfield.Flags.AimSpeed.CurrentValue or 0.3
+    local speed = 0.3
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags.AimSpeed then
+        speed = _G.UltimateCheat.Rayfield.Flags.AimSpeed.CurrentValue
+    end
     local step = direction * speed
     
     pcall(function()
@@ -168,24 +178,3 @@ function AimAssist.startAiming()
         aimConnection = RunService.RenderStepped:Connect(AimAssist.permanentAim)
     end
 end
-
-function AimAssist.stopAiming()
-    aiming = false
-    lockedTarget = nil
-    currentTarget = nil
-    
-    if aimConnection then
-        aimConnection:Disconnect()
-        aimConnection = nil
-    end
-end
-
-function AimAssist.getFOVCircle()
-    return ESPCircle
-end
-
-function AimAssist.init()
-    AimAssist.createFOVCircle()
-end
-
-return AimAssist
