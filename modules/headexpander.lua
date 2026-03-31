@@ -171,4 +171,40 @@ function HeadExpander.toggleWalkSpeed(state)
             end
         end)
     else
-        if
+        if walkSpeedConnection then
+            walkSpeedConnection:Disconnect()
+            walkSpeedConnection = nil
+        end
+        
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16
+            end
+        end
+    end
+end
+
+function HeadExpander.isWalkSpeedEnabled()
+    return walkSpeedEnabled
+end
+
+function HeadExpander.setNormalWalkSpeed(speed)
+    normalWalkSpeed = speed
+    if not isSprinting and walkSpeedEnabled then
+        currentWalkSpeed = speed
+    end
+end
+
+function HeadExpander.setSprintWalkSpeed(speed)
+    sprintWalkSpeed = speed
+    if isSprinting and walkSpeedEnabled then
+        currentWalkSpeed = speed
+    end
+end
+
+function HeadExpander.init()
+    -- Initialisierung (falls nötig)
+end
+
+return HeadExpander
