@@ -1,7 +1,6 @@
 -- main.lua
 -- Anti-Double-Load: Altes Skript beenden
 if _G.UltimateCheat and _G.UltimateCheat.Running then
-    -- Alte Instanz beenden und alle Cheats ausschalten
     if _G.UltimateCheat.AimAssist then _G.UltimateCheat.AimAssist.toggle(false) end
     if _G.UltimateCheat.ESP then
         _G.UltimateCheat.ESP.togglePlayerESP(false)
@@ -18,7 +17,6 @@ if _G.UltimateCheat and _G.UltimateCheat.Running then
     if _G.UltimateCheat.Rayfield then
         _G.UltimateCheat.Rayfield:Destroy()
     end
-    print("Alte Cheat-Instanz wurde beendet")
     wait(0.5)
 end
 
@@ -30,45 +28,21 @@ local mouse = LocalPlayer:GetMouse()
 
 -- Executor Erkennung
 local ExecutorName = "Unknown Executor"
-local executorIdentifiers = {
-    {name = "Synapse X", patterns = {"synapse", "syn x", "sirmeme"}, identifier = function() return pcall(function() return syn and syn.crypt end) end},
-    {name = "ScriptWare", patterns = {"script-ware", "scriptware"}, identifier = function() return pcall(function() return scriptware end) end},
-    {name = "Krnl", patterns = {"krnl", "krnl.ca"}, identifier = function() return pcall(function() return isfile and isfile("krnl.dll") end) end},
-    {name = "Fluxus", patterns = {"fluxus", "flux"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Fluxus" end) end},
-    {name = "Valyse", patterns = {"valyse", "val"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Valyse" end) end},
-    {name = "Electron", patterns = {"electron", "electronv3"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Electron" end) end},
-    {name = "Oxygen U", patterns = {"oxygen", "oxygenu"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Oxygen U" end) end},
-    {name = "Vega X", patterns = {"vega", "vegax"}, identifier = function() return pcall(function() return getexecutorname and getexecutorname() == "Vega X" end) end},
-    {name = "Script-ware", patterns = {"script-ware", "sw"}, identifier = function() return pcall(function() return scriptware end) end},
-}
-
-for _, executor in pairs(executorIdentifiers) do
-    if executor.identifier() then
-        ExecutorName = executor.name
-        break
-    end
-end
-
--- Fallback: Versuche getexecutorname()
 pcall(function()
     local name = getexecutorname()
-    if name and name ~= "" then
-        ExecutorName = name
-    end
+    if name and name ~= "" then ExecutorName = name end
 end)
 
+-- Rayfield UI laden
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Messages mit Executor
 local Messages = {
     "Playing with " .. ExecutorName .. " 🎯",
     "Running on " .. ExecutorName .. " 👁️",
     "Loaded by " .. ExecutorName .. " 🧠",
     ExecutorName .. " Edition ⚡",
-    "Ready to dominate with " .. ExecutorName .. " 😈",
-    "Secure your victory with " .. ExecutorName .. " 🏆",
-    "Made unstoppable by " .. ExecutorName .. " 💪",
-    ExecutorName .. " Engine loaded 🔧"
+    "Ready to dominate 😈",
+    "Secure your victory 🏆",
 }
 local ChosenMessage = Messages[math.random(1, #Messages)]
 
@@ -80,7 +54,7 @@ local Window = Rayfield:CreateWindow({
     Theme = "Default",
     DisableRayfieldPrompts = true,
     ConfigurationSaving = {
-        Enabled = true,
+        Enabled = false, -- AUTO-LOAD AUSGESCHALTET!
         FolderName = "UltimateCheatConfigs",
         FileName = "Configuration",
     },
@@ -91,12 +65,32 @@ local VisualsTab = Window:CreateTab("Visuals", "eye")
 local PlayerTab = Window:CreateTab("Player", "user")
 local SettingsTab = Window:CreateTab("Settings", "settings")
 
--- Module laden
+-- ========== SEQUENTIELLES MODUL-LADEN ==========
+print("Lade Module...")
+
+-- 1. AimAssist laden
 local AimAssist = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/aimassist.lua"))()
+print("[1/5] AimAssist geladen")
+task.wait(0.1)
+
+-- 2. ESP laden
 local ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/esp.lua"))()
+print("[2/5] ESP geladen")
+task.wait(0.1)
+
+-- 3. HeadExpander laden
 local HeadExpander = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/headexpander.lua"))()
+print("[3/5] HeadExpander geladen")
+task.wait(0.1)
+
+-- 4. XRay laden
 local XRay = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/xray.lua"))()
+print("[4/5] XRay geladen")
+task.wait(0.1)
+
+-- 5. UI laden (als letztes)
 local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/PS99ADRISCRIPTER/Apocalypse-Rising-2/main/modules/ui.lua"))()
+print("[5/5] UI geladen")
 
 -- Globale Tabelle
 _G.UltimateCheat = {
@@ -121,14 +115,32 @@ _G.UltimateCheat = {
     XRay = XRay
 }
 
--- Module initialisieren
-if AimAssist and AimAssist.init then AimAssist.init() end
-if ESP and ESP.init then ESP.init() end
-if HeadExpander and HeadExpander.init then HeadExpander.init() end
-if XRay and XRay.init then XRay.init() end
-if UI and UI.init then UI.init() end
+-- ========== MODULE INITIALISIEREN (ALLE STANDARD = AUS) ==========
+print("Initialisiere Module (alle Cheats sind AUS)...")
 
--- Input Handler (wie gehabt)
+if AimAssist and AimAssist.init then 
+    AimAssist.init() 
+    AimAssist.toggle(false)
+end
+if ESP and ESP.init then 
+    ESP.init() 
+    ESP.togglePlayerESP(false)
+    ESP.toggleVehicleESP(false)
+end
+if HeadExpander and HeadExpander.init then 
+    HeadExpander.init() 
+    HeadExpander.toggle(false)
+    HeadExpander.toggleInfiniteJump(false)
+    HeadExpander.toggleWalkSpeed(false)
+end
+if XRay and XRay.init then 
+    XRay.init() 
+end
+if UI and UI.init then 
+    UI.init() 
+end
+
+-- ========== INPUT HANDLER ==========
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
@@ -194,6 +206,7 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
     end
 end)
 
+-- Update Loops
 RunService.Heartbeat:Connect(function()
     if _G.UltimateCheat.PAUSED then return end
     
@@ -212,7 +225,7 @@ end)
 
 print("==========================================")
 print("Ultimate Cheat Suite successfully loaded!")
-print("Running on: " .. ExecutorName)
+print("Alle Cheats sind STANDARDMÄSSIG AUS")
 print("==========================================")
 print("Controls:")
 print("- RightControl: Toggle UI")
@@ -225,4 +238,8 @@ print("- F3: Pause All Visuals")
 print("- F8: Toggle X-Ray")
 print("- F9: Toggle Vehicle ESP")
 print("- Mouse 2: Aim (when Aim Assist enabled)")
+print("==========================================")
+print("Settings:")
+print("- Save/Load Settings über die Settings-Tab (MANUELL)")
+print("- Keine automatische Wiederherstellung beim Start")
 print("==========================================")
