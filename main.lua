@@ -57,10 +57,22 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
+-- KURZE WARTEZEIT, DAMIT RAYFIELD FERTIG IST
+task.wait(0.2)
+
+-- Tabs erstellen (mit Prüfung)
 local AimTab = Window:CreateTab("Aim Assist", "target")
 local VisualsTab = Window:CreateTab("Visuals", "eye")
 local PlayerTab = Window:CreateTab("Player", "user")
 local SettingsTab = Window:CreateTab("Settings", "settings")
+
+-- Prüfen ob Tabs existieren
+if not AimTab or not VisualsTab or not PlayerTab or not SettingsTab then
+    warn("Fehler: Tabs konnten nicht erstellt werden")
+    return
+end
+
+print("Tabs erfolgreich erstellt")
 
 -- Module laden (mit Fehlerbehandlung)
 local AimAssist, ESP, HeadExpander, XRay, UI
