@@ -1,5 +1,4 @@
 -- modules/headexpander.lua
--- Einfacher Head Expander - KEINE komplexen Funktionen
 local HeadExpander = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -10,8 +9,9 @@ local LocalPlayer = Players.LocalPlayer
 local enabled = false
 local connection = nil
 local lastUpdate = 0
+local UPDATE_INTERVAL = 0.3 -- Schneller: alle 0.3 Sekunden
 
--- Größentabelle (einfach)
+-- Größentabelle
 local originalSizes = {}
 local originalCollisions = {}
 
@@ -59,13 +59,12 @@ local function expandHead(char, size)
     end)
 end
 
--- Update-Funktion (wird selten aufgerufen)
+-- Update-Funktion
 local function update()
     if not enabled then return end
     
-    -- Nur alle 1.5 Sekunden updaten (sehr langsam)
     local now = tick()
-    if now - lastUpdate < 1.5 then return end
+    if now - lastUpdate < UPDATE_INTERVAL then return end
     lastUpdate = now
     
     local size = 5
@@ -80,14 +79,13 @@ local function update()
     end
 end
 
--- NEUER SPIELER: Charakter erscheint später
+-- NEUER SPIELER
 local function onPlayerAdded(player)
     if player == LocalPlayer then return end
     
-    -- Warten bis Charakter da ist
     local conn
     conn = player.CharacterAdded:Connect(function(char)
-        task.wait(1.5) -- Warten bis Charakter komplett geladen
+        task.wait(0.5)
         if enabled and char then
             local size = 5
             if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
@@ -104,24 +102,17 @@ function HeadExpander.toggle(state)
     enabled = state
     
     if state then
-        -- Einmalig alle Köpfe setzen
         update()
-        
-        -- Heartbeat mit sehr langsamem Update
         if not connection then
             connection = RunService.Heartbeat:Connect(update)
         end
-        
-        -- Für neue Spieler
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
                 onPlayerAdded(player)
             end
         end
         Players.PlayerAdded:Connect(onPlayerAdded)
-        
     else
-        -- Ausschalten
         if connection then
             connection:Disconnect()
             connection = nil
@@ -147,7 +138,7 @@ function HeadExpander.resetHeadExpander()
     end
 end
 
--- ========== INFINITE JUMP (einfach) ==========
+-- ========== INFINITE JUMP ==========
 local infiniteEnabled = false
 local infiniteConn = nil
 
@@ -182,7 +173,7 @@ function HeadExpander.resetInfiniteJump()
     HeadExpander.toggleInfiniteJump(false)
 end
 
--- ========== WALK SPEED (einfach) ==========
+-- ========== WALK SPEED ==========
 local walkEnabled = false
 local walkConn = nil
 local normalSpeed = 16
