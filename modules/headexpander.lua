@@ -1,179 +1,142 @@
 -- modules/headexpander.lua
+-- Einfacher Head Expander - KEINE komplexen Funktionen
 local HeadExpander = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- ========== KOPIE DER ORIGINAL-LOGIK AUS LIMBEXTENDER ==========
--- (nur für Head, ohne ConnectionManager/Streamable)
-
-local headExpanderEnabled = false
-local originalHeadSizes = {}
-local originalHeadCollisions = {}
-local updateConnection = nil
+-- Zustand
+local enabled = false
+local connection = nil
 local lastUpdate = 0
-local UPDATE_INTERVAL = 0.25
 
--- Helper: Eigenschaftsänderungen überwachen (wie im Original)
-local function watchProperty(instance, prop, callback)
-    if not instance or type(prop) ~= "string" or type(callback) ~= "function" then 
-        return nil 
-    end
-    local signal = instance:GetPropertyChangedSignal(prop)
-    if signal and type(signal.Connect) == "function" then
-        return signal:Connect(function() callback(instance) end)
-    end
-    return nil
-end
+-- Größentabelle (einfach)
+local originalSizes = {}
+local originalCollisions = {}
 
--- Head speichern (wie original saveLimbProperties)
-local function saveHeadProperties(head)
+-- Head wiederherstellen
+local function restoreHead(char)
+    if not char then return end
+    local head = char:FindFirstChild("Head")
     if not head then return end
-    if originalHeadSizes[head] then return end
     
-    originalHeadSizes[head] = {
-        OriginalSize = head.Size,
-        OriginalCanCollide = head.CanCollide,
-        SizeConnection = nil,
-        CollisionConnection = nil,
-    }
-end
-
--- Head wiederherstellen (wie original restoreLimbProperties)
-local function restoreHeadProperties(head)
-    if not head then return end
-    local saved = originalHeadSizes[head]
-    if not saved then return end
-    
-    if saved.SizeConnection and typeof(saved.SizeConnection) == "RBXScriptConnection" then
-        saved.SizeConnection:Disconnect()
-    end
-    if saved.CollisionConnection and typeof(saved.CollisionConnection) == "RBXScriptConnection" then
-        saved.CollisionConnection:Disconnect()
-    end
-    
-    if head and head.Parent then
-        head.Size = saved.OriginalSize
-        head.CanCollide = saved.OriginalCanCollide
-    end
-    
-    originalHeadSizes[head] = nil
-end
-
--- Head modifizieren (wie original modifyLimbProperties)
-local function modifyHeadProperties(head, headSize, canCollide)
-    if not head then return end
-    if originalHeadSizes[head] then return end
-    
-    saveHeadProperties(head)
-    local saved = originalHeadSizes[head]
-    
-    -- Überwache Änderungen (wie im Original)
-    saved.SizeConnection = watchProperty(head, "Size", function(h)
-        pcall(function() h.Size = Vector3.new(headSize, headSize, headSize) end)
-    end)
-    
-    saved.CollisionConnection = watchProperty(head, "CanCollide", function(h)
-        pcall(function() h.CanCollide = canCollide end)
-    end)
-    
-    -- Direkt setzen
-    pcall(function()
-        head.Size = Vector3.new(headSize, headSize, headSize)
-        head.CanCollide = canCollide
-        head.Massless = true
-    end)
-end
-
--- Alle Heads aktualisieren
-local function updateAllHeads()
-    if not headExpanderEnabled then return end
-    
-    local now = tick()
-    if now - lastUpdate < UPDATE_INTERVAL then return end
-    lastUpdate = now
-    
-    local headSize = 5
-    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-        headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-    end
-    local canCollide = true
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local head = player.Character:FindFirstChild("Head")
-            if head then
-                modifyHeadProperties(head, headSize, canCollide)
-            end
-        end
+    local old = originalSizes[char]
+    if old then
+        pcall(function()
+            head.Size = old
+            head.CanCollide = originalCollisions[char] or false
+        end)
+        originalSizes[char] = nil
+        originalCollisions[char] = nil
     end
 end
 
 -- Alle Heads zurücksetzen
-local function restoreAllHeads()
-    for head, _ in pairs(originalHeadSizes) do
-        restoreHeadProperties(head)
+local function restoreAll()
+    for char, _ in pairs(originalSizes) do
+        restoreHead(char)
     end
-    originalHeadSizes = {}
+    originalSizes = {}
+    originalCollisions = {}
 end
 
--- Charakter-Hinzufügung
-local function onCharacterAdded(character)
-    task.wait(0.3)
-    if headExpanderEnabled then
-        local headSize = 5
-        if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
-            headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
-        end
-        local head = character:FindFirstChild("Head")
-        if head then
-            modifyHeadProperties(head, headSize, true)
+-- Head vergrößern
+local function expandHead(char, size)
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+    
+    -- Speichern wenn noch nicht gespeichert
+    if originalSizes[char] == nil then
+        originalSizes[char] = head.Size
+        originalCollisions[char] = head.CanCollide
+    end
+    
+    pcall(function()
+        head.Size = Vector3.new(size, size, size)
+        head.CanCollide = true
+    end)
+end
+
+-- Update-Funktion (wird selten aufgerufen)
+local function update()
+    if not enabled then return end
+    
+    -- Nur alle 1.5 Sekunden updaten (sehr langsam)
+    local now = tick()
+    if now - lastUpdate < 1.5 then return end
+    lastUpdate = now
+    
+    local size = 5
+    if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
+        size = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
+    end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            expandHead(player.Character, size)
         end
     end
 end
 
--- ========== PUBLIC FUNCTIONS ==========
+-- NEUER SPIELER: Charakter erscheint später
+local function onPlayerAdded(player)
+    if player == LocalPlayer then return end
+    
+    -- Warten bis Charakter da ist
+    local conn
+    conn = player.CharacterAdded:Connect(function(char)
+        task.wait(1.5) -- Warten bis Charakter komplett geladen
+        if enabled and char then
+            local size = 5
+            if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
+                size = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
+            end
+            expandHead(char, size)
+        end
+        if conn then conn:Disconnect() end
+    end)
+end
+
+-- ========== ÖFFENTLICHE FUNKTIONEN ==========
 function HeadExpander.toggle(state)
-    headExpanderEnabled = state
+    enabled = state
     
     if state then
-        updateAllHeads()
+        -- Einmalig alle Köpfe setzen
+        update()
         
-        if not updateConnection then
-            updateConnection = RunService.Heartbeat:Connect(updateAllHeads)
+        -- Heartbeat mit sehr langsamem Update
+        if not connection then
+            connection = RunService.Heartbeat:Connect(update)
         end
         
-        -- Bestehende Spieler
+        -- Für neue Spieler
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
-                player.CharacterAdded:Connect(onCharacterAdded)
+                onPlayerAdded(player)
             end
         end
-        
-        -- Neue Spieler
-        Players.PlayerAdded:Connect(function(player)
-            if player ~= LocalPlayer then
-                player.CharacterAdded:Connect(onCharacterAdded)
-            end
-        end)
+        Players.PlayerAdded:Connect(onPlayerAdded)
         
     else
-        if updateConnection then
-            updateConnection:Disconnect()
-            updateConnection = nil
+        -- Ausschalten
+        if connection then
+            connection:Disconnect()
+            connection = nil
         end
-        restoreAllHeads()
+        restoreAll()
     end
 end
 
 function HeadExpander.isEnabled()
-    return headExpanderEnabled
+    return enabled
 end
 
 function HeadExpander.updateSize()
-    if headExpanderEnabled then
-        updateAllHeads()
+    if enabled then
+        update()
     end
 end
 
@@ -184,126 +147,105 @@ function HeadExpander.resetHeadExpander()
     end
 end
 
--- ========== INFINITE JUMP ==========
-local infiniteJumpEnabled = false
-local infiniteJumpConnection = nil
+-- ========== INFINITE JUMP (einfach) ==========
+local infiniteEnabled = false
+local infiniteConn = nil
 
 function HeadExpander.toggleInfiniteJump(state)
-    infiniteJumpEnabled = state
+    infiniteEnabled = state
     
     if state then
-        if not infiniteJumpConnection then
-            infiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
-                if LocalPlayer.Character then
-                    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                    if humanoid then
-                        humanoid:ChangeState("Jumping")
+        if not infiniteConn then
+            infiniteConn = UserInputService.JumpRequest:Connect(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum and hum.Health > 0 then
+                        hum:ChangeState("Jumping")
                     end
                 end
             end)
         end
     else
-        if infiniteJumpConnection then
-            infiniteJumpConnection:Disconnect()
-            infiniteJumpConnection = nil
+        if infiniteConn then
+            infiniteConn:Disconnect()
+            infiniteConn = nil
         end
     end
 end
 
 function HeadExpander.isInfiniteJumpEnabled()
-    return infiniteJumpEnabled
+    return infiniteEnabled
 end
 
 function HeadExpander.resetInfiniteJump()
     HeadExpander.toggleInfiniteJump(false)
 end
 
--- ========== WALK SPEED ==========
-local walkSpeedEnabled = false
-local walkSpeedConnection = nil
-local normalWalkSpeed = 16
-local sprintWalkSpeed = 35
-local currentWalkSpeed = 16
-local isSprinting = false
+-- ========== WALK SPEED (einfach) ==========
+local walkEnabled = false
+local walkConn = nil
+local normalSpeed = 16
+local sprintSpeed = 35
+local currentSpeed = 16
 
-local function updateWalkSpeed()
-    if not walkSpeedEnabled or not LocalPlayer.Character then return end
+local function updateWalk()
+    if not walkEnabled then return end
+    local char = LocalPlayer.Character
+    if not char then return end
     
-    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
     
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
-        isSprinting = true
-        currentWalkSpeed = sprintWalkSpeed
-    else
-        isSprinting = false
-        currentWalkSpeed = normalWalkSpeed
+    local sprint = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+    local newSpeed = sprint and sprintSpeed or normalSpeed
+    
+    if currentSpeed ~= newSpeed then
+        currentSpeed = newSpeed
+        hum.WalkSpeed = currentSpeed
     end
-    
-    humanoid.WalkSpeed = currentWalkSpeed
 end
 
 function HeadExpander.toggleWalkSpeed(state)
-    walkSpeedEnabled = state
+    walkEnabled = state
     
     if state then
         if LocalPlayer.Character then
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.WalkSpeed = currentWalkSpeed
-            end
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = currentSpeed end
         end
-        
-        if not walkSpeedConnection then
-            walkSpeedConnection = RunService.Heartbeat:Connect(updateWalkSpeed)
+        if not walkConn then
+            walkConn = RunService.Heartbeat:Connect(updateWalk)
         end
-        
-        LocalPlayer.CharacterAdded:Connect(function(character)
-            task.wait(0.1)
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid and walkSpeedEnabled then
-                humanoid.WalkSpeed = currentWalkSpeed
-            end
-        end)
     else
-        if walkSpeedConnection then
-            walkSpeedConnection:Disconnect()
-            walkSpeedConnection = nil
+        if walkConn then
+            walkConn:Disconnect()
+            walkConn = nil
         end
-        
         if LocalPlayer.Character then
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
-                humanoid.WalkSpeed = 16
-            end
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = 16 end
         end
     end
 end
 
 function HeadExpander.isWalkSpeedEnabled()
-    return walkSpeedEnabled
+    return walkEnabled
 end
 
 function HeadExpander.setNormalWalkSpeed(speed)
-    normalWalkSpeed = speed
-    if not isSprinting and walkSpeedEnabled then
-        currentWalkSpeed = speed
+    normalSpeed = speed
+    if walkEnabled then
+        currentSpeed = speed
         if LocalPlayer.Character then
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid.WalkSpeed = speed end
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = speed end
         end
     end
 end
 
 function HeadExpander.setSprintWalkSpeed(speed)
-    sprintWalkSpeed = speed
-    if isSprinting and walkSpeedEnabled then
-        currentWalkSpeed = speed
-        if LocalPlayer.Character then
-            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid.WalkSpeed = speed end
-        end
-    end
+    sprintSpeed = speed
 end
 
 function HeadExpander.resetWalkSpeed()
@@ -312,14 +254,13 @@ function HeadExpander.resetWalkSpeed()
         _G.UltimateCheat.Rayfield.Flags.NormalWalkSpeed:Set(16)
         _G.UltimateCheat.Rayfield.Flags.SprintWalkSpeed:Set(35)
     end
-    normalWalkSpeed = 16
-    sprintWalkSpeed = 35
-    currentWalkSpeed = 16
-    isSprinting = false
+    normalSpeed = 16
+    sprintSpeed = 35
+    currentSpeed = 16
 end
 
 function HeadExpander.init()
-    -- Nichts tun
+    -- nichts
 end
 
 return HeadExpander
