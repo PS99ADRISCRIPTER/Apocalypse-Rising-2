@@ -580,6 +580,23 @@ function UI.createSettingsTab()
             if Rayfield then Rayfield:Destroy() end
         end
     })
+    
+    SettingsTab:CreateDivider()
+    SettingsTab:CreateSection("Executor Info")
+    
+    -- Executor Name in klein unter dem Titel
+    local executor = _G.UltimateCheat and _G.UltimateCheat.Executor or "Unknown"
+    
+    SettingsTab:CreateParagraph({
+        Title = "Executor",
+        Content = executor
+    })
+    
+    -- Zusätzlicher Hinweis in klein
+    SettingsTab:CreateParagraph({
+        Title = "",
+        Content = "Running on: " .. executor
+    })
 end
 
 function UI.updateAimToggle(state)
