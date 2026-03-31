@@ -2,46 +2,35 @@
 local HeadExpander = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
+-- Globale Variablen
 local headExpanderEnabled = false
-local headExpanderConnection = nil
 local originalHeadSizes = {}
 local originalHeadCollisions = {}
+local updateConnection = nil
+local lastUpdate = 0
+local UPDATE_INTERVAL = 0.3 -- Nur alle 0.3 Sekunden updaten
 
-local infiniteJumpEnabled = false
-local infiniteJumpConnection = nil
-
-local walkSpeedEnabled = false
-local walkSpeedConnection = nil
-local normalWalkSpeed = 16
-local sprintWalkSpeed = 35
-local currentWalkSpeed = 16
-local isSprinting = false
-
--- Cooldown für Head Expander Updates (reduziert CPU-Last)
-local lastHeadUpdate = 0
-local HEAD_UPDATE_INTERVAL = 0.5 -- Nur alle 0.5 Sekunden aktualisieren
-
--- HEAD EXPANDER - Optimiert
+-- HEAD EXPANDER FUNKTION (nur Head, keine anderen Limbs)
 local function expandHead(character, size)
     if not character then return end
     
     local head = character:FindFirstChild("Head")
     if not head then return end
     
-    -- Prüfe ob sich die Größe bereits geändert hat (verhindert unnötige Setzungen)
+    -- Nur wenn sich die Größe ändert
     if head.Size == Vector3.new(size, size, size) then
-        return -- Keine Änderung nötig
+        return
     end
     
+    -- Originalwerte speichern
     if not originalHeadSizes[character] then
         originalHeadSizes[character] = head.Size
         originalHeadCollisions[character] = head.CanCollide
     end
     
-    -- Nur setzen wenn nötig
+    -- Größe ändern
     pcall(function()
         head.Size = Vector3.new(size, size, size)
         head.CanCollide = true
@@ -75,11 +64,12 @@ end
 local function updateAllHeads()
     if not headExpanderEnabled then return end
     
-    local currentTime = tick()
-    if currentTime - lastHeadUpdate < HEAD_UPDATE_INTERVAL then
-        return -- Zu früh, überspringe Update
+    -- Cooldown, um Überlastung zu vermeiden
+    local now = tick()
+    if now - lastUpdate < UPDATE_INTERVAL then
+        return
     end
-    lastHeadUpdate = currentTime
+    lastUpdate = now
     
     local headSize = 5
     if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
@@ -93,10 +83,10 @@ local function updateAllHeads()
     end
 end
 
--- Charakter-Hinzufügung mit Delay (verhindert Überlastung)
-local function onCharacterAdded(player, character)
-    task.wait(0.5) -- Warte 0.5 Sekunden bevor Head geändert wird
-    if headExpanderEnabled and player ~= LocalPlayer then
+-- Charakter hinzugefügt mit Delay
+local function onCharacterAdded(character)
+    task.wait(0.5)
+    if headExpanderEnabled then
         local headSize = 5
         if _G.UltimateCheat and _G.UltimateCheat.Rayfield and _G.UltimateCheat.Rayfield.Flags and _G.UltimateCheat.Rayfield.Flags.HeadSize then
             headSize = _G.UltimateCheat.Rayfield.Flags.HeadSize.CurrentValue
@@ -105,60 +95,41 @@ local function onCharacterAdded(player, character)
     end
 end
 
+-- PUBLIC FUNCTIONS
 function HeadExpander.toggle(state)
     headExpanderEnabled = state
     
     if state then
-        -- Einmalige Initial-Update
+        -- Einmalig alle aktuellen Köpfe aktualisieren
         updateAllHeads()
         
-        -- Heartbeat mit reduzierter Frequenz (nur alle 0.5 Sekunden)
-        headExpanderConnection = RunService.Heartbeat:Connect(updateAllHeads)
+        -- Heartbeat mit reduzierter Frequenz
+        if not updateConnection then
+            updateConnection = RunService.Heartbeat:Connect(updateAllHeads)
+        end
         
-        -- CharacterAdded mit Delay verbinden
-        for _, player in pairs(Players:GetPlayers()) do
+        -- Für neue Spieler/Charaktere
+        local function onPlayerAdded(player)
             if player ~= LocalPlayer then
-                local connection
-                connection = player.CharacterAdded:Connect(function(character)
-                    onCharacterAdded(player, character)
-                end)
-                -- Speichere connection falls nötig (optional)
-                if not player._headExpanderConnection then
-                    player._headExpanderConnection = connection
-                end
+                player.CharacterAdded:Connect(onCharacterAdded)
             end
         end
         
-        -- Für neue Spieler
-        local playerAddedConnection
-        playerAddedConnection = Players.PlayerAdded:Connect(function(player)
+        -- Bestehende Spieler
+        for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
-                local connection
-                connection = player.CharacterAdded:Connect(function(character)
-                    onCharacterAdded(player, character)
-                end)
-                player._headExpanderConnection = connection
+                player.CharacterAdded:Connect(onCharacterAdded)
             end
-        end)
-        _G.UltimateCheat._playerAddedConnection = playerAddedConnection
+        end
+        
+        -- Neue Spieler
+        Players.PlayerAdded:Connect(onPlayerAdded)
         
     else
-        -- Head Expander ausschalten
-        if headExpanderConnection then
-            headExpanderConnection:Disconnect()
-            headExpanderConnection = nil
-        end
-        
-        -- Connections aufräumen
-        for _, player in pairs(Players:GetPlayers()) do
-            if player._headExpanderConnection then
-                player._headExpanderConnection:Disconnect()
-                player._headExpanderConnection = nil
-            end
-        end
-        if _G.UltimateCheat and _G.UltimateCheat._playerAddedConnection then
-            _G.UltimateCheat._playerAddedConnection:Disconnect()
-            _G.UltimateCheat._playerAddedConnection = nil
+        -- Ausschalten
+        if updateConnection then
+            updateConnection:Disconnect()
+            updateConnection = nil
         end
         
         restoreAllHeads()
@@ -184,7 +155,11 @@ function HeadExpander.resetHeadExpander()
     end
 end
 
--- INFINITE JUMP (unverändert)
+-- INFINITE JUMP (bleibt unverändert)
+local infiniteJumpEnabled = false
+local infiniteJumpConnection = nil
+local UserInputService = game:GetService("UserInputService")
+
 function HeadExpander.toggleInfiniteJump(state)
     infiniteJumpEnabled = state
     
@@ -215,7 +190,14 @@ function HeadExpander.resetInfiniteJump()
     HeadExpander.toggleInfiniteJump(false)
 end
 
--- WALK SPEED (unverändert)
+-- WALK SPEED (bleibt unverändert)
+local walkSpeedEnabled = false
+local walkSpeedConnection = nil
+local normalWalkSpeed = 16
+local sprintWalkSpeed = 35
+local currentWalkSpeed = 16
+local isSprinting = false
+
 local function updateWalkSpeed()
     if not walkSpeedEnabled or not LocalPlayer.Character then return end
     
