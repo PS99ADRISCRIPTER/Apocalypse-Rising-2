@@ -1,4 +1,4 @@
--- main.lua (aktualisiert)
+-- main.lua
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
@@ -60,7 +60,6 @@ _G.UltimateCheat = {
     mouse = mouse,
     STUD_TO_M = 0.28,
     PAUSED = false,
-    -- Module Referenzen
     AimAssist = AimAssist,
     ESP = ESP,
     HeadExpander = HeadExpander,
